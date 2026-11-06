@@ -110,6 +110,22 @@ describe("graph.json shape", () => {
     expect(node(g, "t-draw").degree_shipped).toBe(1);
     expect(removal.degree_shipped).toBe(0);
   });
+
+  it("assigns communities and names them in meta", async () => {
+    const { index, cards } = await load();
+    const { graph: g } = buildGraph(index, cards, { minCount: 1 });
+    // Two pairs of equal size; the one holding the lowest node index (artifact-removal) is 0.
+    expect(node(g, "t-artifact-removal").community).toBe(0);
+    expect(node(g, "t-ramp").community).toBe(0);
+    expect(node(g, "t-creature-removal").community).toBe(1);
+    expect(node(g, "t-draw").community).toBe(1);
+    expect(node(g, "t-removal").community).toBe(0); // children split 0 and 1: tie goes to 0
+    expect(g.meta.community_count).toBe(2);
+    expect(g.meta.communities).toEqual([
+      { id: 0, name: "artifact removal / ramp", size: 2 },
+      { id: 1, name: "creature removal / draw", size: 2 },
+    ]);
+  });
 });
 
 describe("toCard", () => {

@@ -8,8 +8,9 @@ import { existsSync } from "node:fs";
 import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
-import { MIN_COUNT } from "./config.js";
+import { COMMUNITY_K, MIN_COUNT } from "./config.js";
 import { toCard } from "./lib/cards.js";
+import { buildAdjacency, topKEdges } from "./lib/edgeRank.js";
 import { buildGraph } from "./lib/graph.js";
 import { readJsonl } from "./lib/jsonl.js";
 import { BULK_TYPES, downloadTo, fetchBulkMetadata, type BulkType } from "./lib/scryfall.js";
@@ -111,6 +112,18 @@ async function main() {
   const taggedCards = cards.filter((c) => c.tags.length > 0).length;
   const mb = async (p: string) => ((await stat(p)).size / 1e6).toFixed(1);
   const spread = [0, 25, 50, 75, 100];
+  const edgeList = graph.edges;
+  const defaultView = topKEdges(buildAdjacency(edgeList, graph.nodes.length, "npmi"), edgeList, "npmi", COMMUNITY_K);
+  const viewDegree = new Map<number, number>();
+  for (const i of defaultView) {
+    const e = edgeList[i]!;
+    for (const v of [e.s, e.t]) viewDegree.set(v, (viewDegree.get(v) ?? 0) + 1);
+  }
+  const [busiestNode, busiestDeg] = [...viewDegree].sort((a, b) => b[1] - a[1])[0] ?? [-1, 0];
+  const busiest =
+    busiestNode < 0
+      ? "n/a"
+      : `"${graph.nodes[busiestNode]!.label}" on ${busiestDeg} (${((100 * busiestDeg) / defaultView.size).toFixed(1)}%)`;
   console.log(`
 === prep summary ===
 tags:              ${graph.nodes.length} (${leaves.length} leaf, ${graph.nodes.length - leaves.length} parent)
@@ -126,6 +139,9 @@ co-occur pairs:    ${stats.pairsBeforeFilter} sharing any card
   npmi, shipped:   ${percentiles(co.map((e) => e.npmi), spread)}
   count, shipped:  ${percentiles(co.map((e) => e.count), spread)}
   leaves w/ edges: ${leaves.filter((n) => n.degree_shipped > 0).length} of ${leaves.length}
+default view:      ${defaultView.size} edges (npmi, top ${COMMUNITY_K} per tag); busiest tag ${busiest}
+communities:       ${graph.meta.community_count} (${leaves.filter((n) => n.community < 0).length} leaf tags unclustered)
+  10 largest:      ${graph.meta.communities.slice(0, 10).map((c) => `${c.size} "${c.name}"`).join(", ")}
 graph.json:        ${await mb(graphPath)} MB
 cards.json:        ${await mb(cardsPath)} MB
 took:              ${((Date.now() - started) / 1000).toFixed(1)}s

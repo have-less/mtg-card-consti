@@ -128,6 +128,10 @@ export interface GraphMeta {
   N: number;
   min_count: number;
   ship_k: number;
+  community_resolution: number;
+  community_count: number;
+  /** Indexed by community id. size counts leaf tags only. */
+  communities: { id: number; name: string; size: number }[];
 }
 
 export interface Graph {

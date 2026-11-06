@@ -1,4 +1,5 @@
-import { MIN_COUNT, SHIP_K } from "../config.js";
+import { COMMUNITY_K, COMMUNITY_RESOLUTION, COMMUNITY_SEED, MIN_COUNT, SHIP_K } from "../config.js";
+import { describeCommunities, leafCommunities, withParentCommunities } from "./communities.js";
 import { cooccurrence } from "./cooccurrence.js";
 import { shippedEdges } from "./edgeRank.js";
 import { dominantColor, rootParents } from "./nodeFields.js";
@@ -8,6 +9,9 @@ import type { Card, CoEdge, Graph, GraphNode, HierEdge } from "./types.js";
 export interface BuildOptions {
   minCount?: number;
   shipK?: number;
+  communityK?: number;
+  communityResolution?: number;
+  communitySeed?: number;
   now?: Date;
 }
 
@@ -22,7 +26,14 @@ export interface BuildStats {
 export function buildGraph(
   index: TagIndex,
   cards: Card[],
-  { minCount = MIN_COUNT, shipK = SHIP_K, now = new Date() }: BuildOptions = {},
+  {
+    minCount = MIN_COUNT,
+    shipK = SHIP_K,
+    communityK = COMMUNITY_K,
+    communityResolution = COMMUNITY_RESOLUTION,
+    communitySeed = COMMUNITY_SEED,
+    now = new Date(),
+  }: BuildOptions = {},
 ): { graph: Graph; stats: BuildStats } {
   const known = new Set(cards.map((c) => c.oracle_id));
   const resolved = resolveTagCards(index, known);
@@ -33,11 +44,16 @@ export function buildGraph(
   const pos = new Map(ids.map((id, i) => [id, i]));
   const cardCount = ids.map((id) => resolved.get(id)?.size ?? 0);
 
+  const isLeafAt = ids.map(leaf);
   const parents: number[][] = ids.map(() => []);
+  const children: number[][] = ids.map(() => []);
   const hier: HierEdge[] = hierarchyPairs(index)
     .map(([p, c]) => ({ s: pos.get(p)!, t: pos.get(c)!, type: "h" as const }))
     .sort((a, b) => a.s - b.s || a.t - b.t);
-  for (const e of hier) parents[e.t]!.push(e.s);
+  for (const e of hier) {
+    parents[e.t]!.push(e.s);
+    children[e.s]!.push(e.t);
+  }
   const { root, depth } = rootParents(parents, cardCount);
 
   const co = cooccurrence(cards, leaf, minCount);
@@ -55,6 +71,12 @@ export function buildGraph(
     degree[e.t]!++;
   }
 
+  const community = withParentCommunities(
+    leafCommunities(shipped, ids.length, { k: communityK, resolution: communityResolution, seed: communitySeed }),
+    children,
+    isLeafAt,
+  );
+
   const nodes: GraphNode[] = ids.map((id, i) => {
     const t = index.tags.get(id)!;
     return {
@@ -63,19 +85,28 @@ export function buildGraph(
       label: t.label,
       slug: t.slug ?? "",
       card_count: cardCount[i]!,
-      is_leaf: leaf(id),
+      is_leaf: isLeafAt[i]!,
       depth: depth[i]!,
       root_parent: root[i]!,
-      community: -1,
+      community: community[i]!,
       dominant_color: dominantColor([...(resolved.get(id) ?? [])].map((c) => colorKeyOf.get(c)!)),
       degree_shipped: degree[i]!,
     };
   });
 
+  const communities = describeCommunities(community, nodes);
+
   return {
     graph: {
       generated_at: now.toISOString(),
-      meta: { N: co.n, min_count: minCount, ship_k: shipK },
+      meta: {
+        N: co.n,
+        min_count: minCount,
+        ship_k: shipK,
+        community_resolution: communityResolution,
+        community_count: communities.length,
+        communities,
+      },
       nodes,
       edges: [...shipped, ...hier],
     },

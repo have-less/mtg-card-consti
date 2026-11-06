@@ -11,6 +11,12 @@ export const MIN_COUNT = 3;
  */
 export const SHIP_K = 30;
 
+/** Communities are found on each leaf tag's top COMMUNITY_K edges by npmi. */
+export const COMMUNITY_K = 5;
+export const COMMUNITY_RESOLUTION = 1;
+/** Seed for Louvain's random source, so rebuilds give the same communities. */
+export const COMMUNITY_SEED = 1;
+
 /**
  * Scryfall's oracle_tags file stores tagging weight as a level name
  * ("median", "very_strong", ...). Keys are normalized: lowercase, no "_" or spaces.
