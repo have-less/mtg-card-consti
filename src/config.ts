@@ -2,6 +2,9 @@
  * Every tuning value for prep and the viewer lives here.
  */
 
+/** Co-occurrence pairs sharing fewer cards than this are dropped. */
+export const MIN_COUNT = 3;
+
 /**
  * Scryfall's oracle_tags file stores tagging weight as a level name
  * ("median", "very_strong", ...). Keys are normalized: lowercase, no "_" or spaces.

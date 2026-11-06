@@ -84,6 +84,8 @@ export interface CooccurrenceEdge {
   type: "cooccurrence";
   count: number;
   score: number;
+  npmi: number;
+  cosine: number;
 }
 
 export interface HierarchyEdge {

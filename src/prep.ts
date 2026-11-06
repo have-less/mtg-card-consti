@@ -1,5 +1,5 @@
 /**
- * npm run prep [-- --offline] [--force] [--raw-dir data/raw] [--out-dir data/out] [--min-count 2]
+ * npm run prep [-- --offline] [--force] [--raw-dir data/raw] [--out-dir data/out] [--min-count 3]
  *
  * Downloads Scryfall's oracle_cards and oracle_tags bulk files (once per day),
  * joins them, and writes data/out/graph.json and data/out/cards.json.
@@ -8,6 +8,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
+import { MIN_COUNT } from "./config.js";
 import { toCard } from "./lib/cards.js";
 import { buildGraph } from "./lib/graph.js";
 import { readJsonl } from "./lib/jsonl.js";
@@ -21,7 +22,7 @@ const { values: args } = parseArgs({
     force: { type: "boolean", default: false },
     "raw-dir": { type: "string", default: "data/raw" },
     "out-dir": { type: "string", default: "data/out" },
-    "min-count": { type: "string", default: process.env.PREP_MIN_COUNT ?? "2" },
+    "min-count": { type: "string", default: process.env.PREP_MIN_COUNT ?? String(MIN_COUNT) },
   },
 });
 const rawDir = args["raw-dir"]!;

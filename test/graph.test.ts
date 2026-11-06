@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { readJsonl } from "../src/lib/jsonl.js";
 import { toCard } from "../src/lib/cards.js";
 import { buildGraph } from "../src/lib/graph.js";
-import { cooccurrenceEdges } from "../src/lib/cooccurrence.js";
-import { indexTags } from "../src/lib/tags.js";
+import { cooccurrence } from "../src/lib/cooccurrence.js";
+import { indexTags, isLeaf } from "../src/lib/tags.js";
 import type { Card, CooccurrenceEdge, RawCard, RawTag } from "../src/lib/types.js";
 
 async function load() {
@@ -21,18 +21,43 @@ async function load() {
 const key = (e: CooccurrenceEdge) => `${e.source}|${e.target}`;
 
 describe("co-occurrence (hand-checked fixture)", () => {
+  // Leaf tags on the 4 fixture cards, so N = 4:
+  //   creature-removal {c1,c2,c3}  artifact-removal {c2,c4}  draw {c1,c2,c3}  ramp {c4}
   it("matches the expected edge map and excludes parent tags", async () => {
     const { index, cards } = await load();
     const g = buildGraph(index, cards, 1);
     const co = g.edges.filter((e): e is CooccurrenceEdge => e.type === "cooccurrence");
-    const got = Object.fromEntries(co.map((e) => [key(e), [e.count, e.score]]));
+    const got = Object.fromEntries(co.map((e) => [key(e), [e.count, e.score, e.npmi, e.cosine]]));
     expect(got).toEqual({
-      "t-creature-removal|t-draw": [3, 2],
-      "t-artifact-removal|t-creature-removal": [1, 0.5],
-      "t-artifact-removal|t-draw": [1, 1],
-      "t-artifact-removal|t-ramp": [1, 1],
+      // ln(4*3/(3*3)) / -ln(3/4) = 1; 3 / sqrt(3*3) = 1
+      "t-creature-removal|t-draw": [3, 2, 1, 1],
+      // ln(4*1/(2*1)) / -ln(1/4) = ln 2 / ln 4 = 0.5; 1 / sqrt(2) = 0.707
+      "t-artifact-removal|t-ramp": [1, 1, 0.5, 0.707],
+      // artifact-removal with creature-removal or draw: ln(4/6) < 0, dropped
     });
     expect(co.some((e) => e.source === "t-removal" || e.target === "t-removal")).toBe(false);
+  });
+
+  it("reports N, per-tag counts and pair counts before filtering", async () => {
+    const { cards, index } = await load();
+    const r = cooccurrence(cards, (id) => isLeaf(index, id), 1);
+    expect(r.n).toBe(4);
+    expect(Object.fromEntries(r.tagCounts)).toEqual({
+      "t-creature-removal": 3,
+      "t-artifact-removal": 2,
+      "t-draw": 3,
+      "t-ramp": 1,
+    });
+    expect(r.pairsBeforeFilter).toBe(4);
+    expect(r.pairsAfterMinCount).toBe(4);
+  });
+
+  it("drops pairs at or below chance (npmi <= 0)", () => {
+    // a and b each on 2 of 4 cards, sharing 1: exactly chance, npmi = 0.
+    const t = (...ids: string[]) => ({ tags: ids.map((id) => ({ id, weight: 1 })) });
+    const r = cooccurrence([t("a", "b"), t("a", "x"), t("b", "y"), t("x", "y")], () => true);
+    expect(r.edges.map(key)).not.toContain("a|b");
+    expect(r.pairsAfterMinCount).toBe(4);
   });
 
   it("drops edges below minCount", async () => {
@@ -52,11 +77,13 @@ describe("co-occurrence (hand-checked fixture)", () => {
   });
 
   it("counts a tag once per card even if listed twice", () => {
-    const edges = cooccurrenceEdges(
+    const { edges } = cooccurrence(
       [{ tags: [{ id: "a", weight: 1 }, { id: "a", weight: 0.5 }, { id: "b", weight: 1 }] }],
       () => true,
     );
-    expect(edges).toEqual([{ source: "a", target: "b", type: "cooccurrence", count: 1, score: 1 }]);
+    expect(edges).toEqual([
+      { source: "a", target: "b", type: "cooccurrence", count: 1, score: 1, npmi: 1, cosine: 1 },
+    ]);
   });
 });
 

@@ -1,4 +1,4 @@
-import { cooccurrenceEdges } from "./cooccurrence.js";
+import { cooccurrence } from "./cooccurrence.js";
 import { hierarchyPairs, isLeaf, resolveTagCards, type TagIndex } from "./tags.js";
 import type { Card, Graph, GraphEdge, GraphNode } from "./types.js";
 
@@ -18,7 +18,7 @@ export function buildGraph(index: TagIndex, cards: Card[], minCount = 1, now = n
 
   const edges: GraphEdge[] = [
     ...hierarchyPairs(index).map(([source, target]) => ({ source, target, type: "hierarchy" as const })),
-    ...cooccurrenceEdges(cards, leaf, minCount),
+    ...cooccurrence(cards, leaf, minCount).edges,
   ];
 
   return { generated_at: now.toISOString(), nodes, edges };
