@@ -4,7 +4,7 @@ import { toCard } from "../src/lib/cards.js";
 import { buildGraph } from "../src/lib/graph.js";
 import { cooccurrence } from "../src/lib/cooccurrence.js";
 import { indexTags, isLeaf } from "../src/lib/tags.js";
-import type { Card, CooccurrenceEdge, RawCard, RawTag } from "../src/lib/types.js";
+import type { Card, CoEdge, CooccurrenceEdge, Graph, RawCard, RawTag } from "../src/lib/types.js";
 
 async function load() {
   const rawTags: RawTag[] = [];
@@ -19,15 +19,19 @@ async function load() {
 }
 
 const key = (e: CooccurrenceEdge) => `${e.source}|${e.target}`;
+const coEdges = (g: Graph) => g.edges.filter((e): e is CoEdge => e.type === "co");
+const node = (g: Graph, id: string) => g.nodes.find((n) => n.id === id)!;
 
+// Leaf tags on the 4 fixture cards, so N = 4:
+//   creature-removal {c1,c2,c3}  artifact-removal {c2,c4}  draw {c1,c2,c3}  ramp {c4}
 describe("co-occurrence (hand-checked fixture)", () => {
-  // Leaf tags on the 4 fixture cards, so N = 4:
-  //   creature-removal {c1,c2,c3}  artifact-removal {c2,c4}  draw {c1,c2,c3}  ramp {c4}
   it("matches the expected edge map and excludes parent tags", async () => {
     const { index, cards } = await load();
-    const g = buildGraph(index, cards, 1);
-    const co = g.edges.filter((e): e is CooccurrenceEdge => e.type === "cooccurrence");
-    const got = Object.fromEntries(co.map((e) => [key(e), [e.count, e.score, e.npmi, e.cosine]]));
+    const { graph: g } = buildGraph(index, cards, { minCount: 1 });
+    const id = (i: number) => g.nodes[i]!.id;
+    const got = Object.fromEntries(
+      coEdges(g).map((e) => [`${id(e.s)}|${id(e.t)}`, [e.count, e.score, e.npmi, e.cosine]]),
+    );
     expect(got).toEqual({
       // ln(4*3/(3*3)) / -ln(3/4) = 1; 3 / sqrt(3*3) = 1
       "t-creature-removal|t-draw": [3, 2, 1, 1],
@@ -35,7 +39,7 @@ describe("co-occurrence (hand-checked fixture)", () => {
       "t-artifact-removal|t-ramp": [1, 1, 0.5, 0.707],
       // artifact-removal with creature-removal or draw: ln(4/6) < 0, dropped
     });
-    expect(co.some((e) => e.source === "t-removal" || e.target === "t-removal")).toBe(false);
+    expect(g.meta.N).toBe(4);
   });
 
   it("reports N, per-tag counts and pair counts before filtering", async () => {
@@ -62,18 +66,11 @@ describe("co-occurrence (hand-checked fixture)", () => {
 
   it("drops edges below minCount", async () => {
     const { index, cards } = await load();
-    const g = buildGraph(index, cards, 2);
-    const co = g.edges.filter((e): e is CooccurrenceEdge => e.type === "cooccurrence");
-    expect(co.map(key)).toEqual(["t-creature-removal|t-draw"]);
-  });
-
-  it("emits hierarchy edges and resolved card counts", async () => {
-    const { index, cards } = await load();
-    const g = buildGraph(index, cards, 1);
-    const h = g.edges.filter((e) => e.type === "hierarchy").map((e) => `${e.source}>${e.target}`).sort();
-    expect(h).toEqual(["t-removal>t-artifact-removal", "t-removal>t-creature-removal"]);
-    const removal = g.nodes.find((n) => n.id === "t-removal")!;
-    expect(removal).toMatchObject({ card_count: 4, is_leaf: false });
+    const { graph: g, stats } = buildGraph(index, cards, { minCount: 2 });
+    expect(coEdges(g).map((e) => `${g.nodes[e.s]!.id}|${g.nodes[e.t]!.id}`)).toEqual([
+      "t-creature-removal|t-draw",
+    ]);
+    expect(stats.pairsAfterMinCount).toBe(1);
   });
 
   it("counts a tag once per card even if listed twice", () => {
@@ -84,6 +81,34 @@ describe("co-occurrence (hand-checked fixture)", () => {
     expect(edges).toEqual([
       { source: "a", target: "b", type: "cooccurrence", count: 1, score: 1, npmi: 1, cosine: 1 },
     ]);
+  });
+});
+
+describe("graph.json shape", () => {
+  it("indexes nodes by position and points edges at indexes", async () => {
+    const { index, cards } = await load();
+    const { graph: g } = buildGraph(index, cards, { minCount: 1 });
+    g.nodes.forEach((n, i) => expect(n.i).toBe(i));
+    for (const e of coEdges(g)) expect(e.s).toBeLessThan(e.t);
+    const h = g.edges
+      .filter((e) => e.type === "h")
+      .map((e) => `${g.nodes[e.s]!.id}>${g.nodes[e.t]!.id}`)
+      .sort();
+    expect(h).toEqual(["t-removal>t-artifact-removal", "t-removal>t-creature-removal"]);
+  });
+
+  it("adds hierarchy and color fields", async () => {
+    const { index, cards } = await load();
+    const { graph: g } = buildGraph(index, cards, { minCount: 1 });
+    const removal = node(g, "t-removal");
+    expect(removal).toMatchObject({ card_count: 4, is_leaf: false, depth: 0, root_parent: removal.i });
+    expect(node(g, "t-creature-removal")).toMatchObject({ depth: 1, root_parent: removal.i });
+    // Cards: c1 B, c2 UB (M), c3 R, c4 colorless
+    expect(node(g, "t-creature-removal").dominant_color).toBe("B"); // B, M, R tie: WUBRG order
+    expect(node(g, "t-artifact-removal").dominant_color).toBe("M"); // M, C tie
+    expect(node(g, "t-ramp").dominant_color).toBe("C");
+    expect(node(g, "t-draw").degree_shipped).toBe(1);
+    expect(removal.degree_shipped).toBe(0);
   });
 });
 

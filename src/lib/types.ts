@@ -69,15 +69,7 @@ export interface Card {
   tags: CardTag[];
 }
 
-export interface GraphNode {
-  id: string;
-  label: string;
-  slug: string;
-  category: string | null;
-  card_count: number;
-  is_leaf: boolean;
-}
-
+/** Co-occurrence edge between two leaf tag ids, as computed in prep. */
 export interface CooccurrenceEdge {
   source: string;
   target: string;
@@ -88,16 +80,59 @@ export interface CooccurrenceEdge {
   cosine: number;
 }
 
-export interface HierarchyEdge {
-  source: string; // parent
-  target: string; // child
-  type: "hierarchy";
+// graph.json. Edges point at nodes by array position.
+
+export type DominantColor = "W" | "U" | "B" | "R" | "G" | "M" | "C";
+
+export interface GraphNode {
+  /** Equals the array position. */
+  i: number;
+  /** Scryfall tag UUID, the join key into cards.json. */
+  id: string;
+  label: string;
+  slug: string;
+  /** Size of the resolved card set (parents include descendants). */
+  card_count: number;
+  is_leaf: boolean;
+  depth: number;
+  /** Node index of the top-level ancestor; a root points to itself. */
+  root_parent: number;
+  /** -1 means unclustered. */
+  community: number;
+  dominant_color: DominantColor;
+  degree_shipped: number;
 }
 
-export type GraphEdge = CooccurrenceEdge | HierarchyEdge;
+export interface CoEdge {
+  /** s < t */
+  s: number;
+  t: number;
+  type: "co";
+  count: number;
+  score: number;
+  npmi: number;
+  cosine: number;
+}
+
+export interface HierEdge {
+  /** Parent */
+  s: number;
+  /** Child */
+  t: number;
+  type: "h";
+}
+
+export type GraphEdge = CoEdge | HierEdge;
+
+export interface GraphMeta {
+  N: number;
+  min_count: number;
+  ship_k: number;
+}
 
 export interface Graph {
   generated_at: string;
+  meta: GraphMeta;
   nodes: GraphNode[];
   edges: GraphEdge[];
 }

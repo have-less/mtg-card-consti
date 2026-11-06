@@ -6,6 +6,12 @@
 export const MIN_COUNT = 3;
 
 /**
+ * Ship an edge if it is in the top SHIP_K of either endpoint under any score.
+ * Must be at least the largest edges-per-tag value the viewer allows.
+ */
+export const SHIP_K = 30;
+
+/**
  * Scryfall's oracle_tags file stores tagging weight as a level name
  * ("median", "very_strong", ...). Keys are normalized: lowercase, no "_" or spaces.
  */
