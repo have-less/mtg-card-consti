@@ -1,0 +1,5 @@
+{"id":"t-removal","type":"oracle","label":"removal","slug":"removal","category":null,"parent_ids":[],"child_ids":["t-creature-removal","t-artifact-removal"],"taggings":[]}
+{"id":"t-creature-removal","type":"oracle","label":"creature removal","slug":"creature-removal","category":null,"parent_ids":["t-removal"],"child_ids":[],"taggings":[{"oracle_id":"c1","weight":1},{"oracle_id":"c2","weight":0.5},{"oracle_id":"c3","weight":1}]}
+{"id":"t-artifact-removal","type":"oracle","label":"artifact removal","slug":"artifact-removal","category":null,"parent_ids":["t-removal"],"child_ids":[],"taggings":[{"oracle_id":"c2","weight":1},{"oracle_id":"c4","weight":1}]}
+{"id":"t-draw","type":"oracle","label":"draw","slug":"draw","category":null,"parent_ids":[],"child_ids":[],"taggings":[{"oracle_id":"c1","weight":0.5},{"oracle_id":"c2","weight":1},{"oracle_id":"c3","weight":1}]}
+{"id":"t-ramp","type":"oracle","label":"ramp","slug":"ramp","category":null,"parent_ids":[],"child_ids":[],"taggings":[{"oracle_id":"c4","weight":1}]}

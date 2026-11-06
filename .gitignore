@@ -1,0 +1,7 @@
+node_modules/
+data/raw/
+data/out/
+data/fixture-out/
+dist/
+*.part
+.DS_Store
