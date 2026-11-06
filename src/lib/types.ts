@@ -2,7 +2,8 @@
 
 export interface RawTagging {
   oracle_id: string;
-  weight?: number;
+  /** A level name like "median" in the live file; numbers are accepted too. */
+  weight?: number | string;
 }
 
 export interface RawTag {
