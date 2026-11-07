@@ -1,8 +1,11 @@
 import type { GraphNode } from "../lib/types.js";
 import type { TagCard } from "./cardIndex.js";
+import { filterCards } from "./search.js";
 
 const PAGE_SIZE = 50;
 const MARGIN = 12;
+/** Below the tag search box. */
+const DOCK_TOP = 56;
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string) => {
   const e = document.createElement(tag);
@@ -16,7 +19,11 @@ export class CardPopup {
   private readonly root = el("div", "card-popup");
   private readonly title = el("div", "card-popup-title");
   private readonly meta = el("div", "card-popup-meta");
+  private readonly filter = el("input", "card-popup-filter");
   private readonly list = el("div", "card-popup-list");
+  private allCards: TagCard[] | null = null;
+  /** The tag's card count, shown while cards are loading. */
+  private expected = 0;
   private cards: TagCard[] = [];
   private shown = 0;
 
@@ -28,7 +35,10 @@ export class CardPopup {
     const heading = el("div");
     heading.append(this.title, this.meta);
     header.append(heading, close);
-    this.root.append(header, this.list);
+    this.filter.type = "search";
+    this.filter.placeholder = "Filter by name, type or text";
+    this.filter.addEventListener("input", () => this.render());
+    this.root.append(header, this.filter, this.list);
     this.root.hidden = true;
     this.list.addEventListener("scroll", () => {
       if (this.list.scrollTop + this.list.clientHeight > this.list.scrollHeight - 200) this.appendPage();
@@ -40,31 +50,44 @@ export class CardPopup {
     return !this.root.hidden;
   }
 
-  /** Open for a tag near a screen point. Pass cards as null while they are still loading. */
-  open(node: GraphNode, cards: TagCard[] | null, at: { x: number; y: number }) {
+  /**
+   * Open for a tag next to a screen point, or docked top left when no point is
+   * given. Pass cards as null while they are still loading.
+   */
+  open(node: GraphNode, cards: TagCard[] | null, at?: { x: number; y: number }) {
     this.title.replaceChildren();
     const link = el("a", undefined, node.label);
     link.href = `https://tagger.scryfall.com/tags/card/${node.slug}`;
     link.target = "_blank";
     link.rel = "noopener";
     this.title.append(link);
-    this.setCards(cards, node.card_count);
+    this.filter.value = "";
+    this.expected = node.card_count;
+    this.setCards(cards);
     this.root.hidden = false;
     this.place(at);
   }
 
-  setCards(cards: TagCard[] | null, expected?: number) {
+  setCards(cards: TagCard[] | null) {
+    this.allCards = cards;
+    this.render();
+  }
+
+  private render() {
     this.list.replaceChildren();
     this.list.scrollTop = 0;
-    this.cards = cards ?? [];
     this.shown = 0;
-    if (!cards) {
-      this.meta.textContent = `${expected ?? ""} cards`;
+    const plural = (n: number) => `${n} card${n === 1 ? "" : "s"}`;
+    if (!this.allCards) {
+      this.cards = [];
+      this.meta.textContent = plural(this.expected);
       this.list.append(el("div", "card-popup-empty", "Loading cards…"));
       return;
     }
-    this.meta.textContent = `${cards.length} card${cards.length === 1 ? "" : "s"}`;
-    if (cards.length === 0) this.list.append(el("div", "card-popup-empty", "No cards"));
+    this.cards = filterCards(this.allCards, this.filter.value);
+    const total = this.allCards.length;
+    this.meta.textContent = this.cards.length === total ? plural(total) : `${this.cards.length} of ${plural(total)}`;
+    if (this.cards.length === 0) this.list.append(el("div", "card-popup-empty", total ? "No matching cards" : "No cards"));
     this.appendPage();
   }
 
@@ -77,7 +100,13 @@ export class CardPopup {
     for (; this.shown < end; this.shown++) this.list.append(cardRow(this.cards[this.shown]!));
   }
 
-  private place({ x, y }: { x: number; y: number }) {
+  private place(at?: { x: number; y: number }) {
+    if (!at) {
+      this.root.style.left = `${MARGIN}px`;
+      this.root.style.top = `${DOCK_TOP}px`;
+      return;
+    }
+    const { x, y } = at;
     const { offsetWidth: w, offsetHeight: h } = this.root;
     const left = x + MARGIN + w > window.innerWidth ? x - MARGIN - w : x + MARGIN;
     const top = Math.min(Math.max(MARGIN, y - h / 2), window.innerHeight - h - MARGIN);

@@ -98,7 +98,15 @@ export class GraphRenderer {
     });
   }
 
+  /** Select a point with its neighbors and zoom to it. */
+  focusPoint(index: number) {
+    this.cosmograph.selectPoint(index, false, true);
+    this.cosmograph.setFocusedPoint(index);
+    this.cosmograph.zoomToPoint(index, 700);
+  }
+
   clearSelection() {
+    this.cosmograph.setFocusedPoint(undefined);
     this.cosmograph.unselectAll();
   }
 

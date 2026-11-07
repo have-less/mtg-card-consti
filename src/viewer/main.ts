@@ -4,6 +4,7 @@ import type { Card, Graph } from "../lib/types.js";
 import { buildCardIndex, type CardIndex } from "./cardIndex.js";
 import { CardPopup } from "./cardPopup.js";
 import { colorNodes, type ColorMode } from "./colors.js";
+import { TagSearch } from "./tagSearch.js";
 import { adjacencyByScore, linkRows, pointRows, visibleEdges, type Filter } from "./viewData.js";
 
 const GRAPH_URL = "/data/out/graph.json";
@@ -59,11 +60,18 @@ async function main() {
         })
         .catch((e: Error) => setStatus(e.message));
     },
-    onPointClick: (index, at) => {
-      openTag = index;
-      popup.open(graph.nodes[index]!, cardIndex?.cardsForTag(index) ?? null, at);
-    },
+    onPointClick: (index, at) => openPopup(index, at),
     onBackgroundClick: () => popup.isOpen && closePopup(),
+  });
+
+  const openPopup = (index: number, at?: { x: number; y: number }) => {
+    openTag = index;
+    popup.open(graph.nodes[index]!, cardIndex?.cardsForTag(index) ?? null, at);
+  };
+
+  new TagSearch(document.body, graph.nodes, (node) => {
+    renderer.focusPoint(node.i);
+    openPopup(node.i);
   });
 
   window.addEventListener("keydown", (e) => {
