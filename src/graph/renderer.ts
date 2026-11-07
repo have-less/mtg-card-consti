@@ -26,6 +26,8 @@ export interface RendererOptions {
   points: PointRow[];
   links: LinkRow[];
   showClusterLabels: boolean;
+  /** 2 for the flat pan/zoom view, 3 for the orbit camera. */
+  dimensions?: 2 | 3;
   simulation?: SimulationSettings;
   /** Called once per data rebuild with what was drawn. */
   onRebuilt?: (stats: { points: number; links: number }) => void;
@@ -46,8 +48,12 @@ function simulationConfig(s: SimulationSettings): CosmographConfig {
 export class GraphRenderer {
   private readonly cosmograph: Cosmograph;
 
+  private config: CosmographConfig;
+
   constructor(container: HTMLElement, opts: RendererOptions) {
-    this.cosmograph = new Cosmograph(container, {
+    this.config = {
+      spaceDimensions: opts.dimensions ?? 2,
+      pointSphereShading: true,
       points: opts.points,
       pointIdBy: "id",
       pointIndexBy: "idx",
@@ -95,7 +101,15 @@ export class GraphRenderer {
       selectPointOnClick: true,
       onPointClick: (index, _pos, event) => opts.onPointClick?.(index, { x: event.clientX, y: event.clientY }),
       onBackgroundClick: () => opts.onBackgroundClick?.(),
-    });
+    };
+    this.cosmograph = new Cosmograph(container, this.config);
+  }
+
+  /** Switch between the flat view and the 3D orbit view, re-running the layout. */
+  async setDimensions(dimensions: 2 | 3) {
+    this.config = { ...this.config, spaceDimensions: dimensions };
+    await this.cosmograph.setConfig(this.config);
+    this.cosmograph.start(1);
   }
 
   /** Select a point with its neighbors and zoom to it. */

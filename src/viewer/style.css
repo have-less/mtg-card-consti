@@ -191,6 +191,26 @@ body {
   font-size: 12px;
 }
 
+.view-toggle {
+  position: fixed;
+  z-index: 11;
+  top: 12px;
+  right: 12px;
+  min-width: 44px;
+  padding: 7px 12px;
+  background: #2a2c33;
+  border: 1px solid #3a3c44;
+  border-radius: 6px;
+  color: #f0f0f0;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.view-toggle:hover {
+  border-color: #5da5da;
+}
+
 #status {
   position: absolute;
   left: 12px;
