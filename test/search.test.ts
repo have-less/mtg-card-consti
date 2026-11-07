@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Card, GraphNode } from "../src/lib/types.js";
 import type { TagCard } from "../src/viewer/cardIndex.js";
-import { filterCards, searchTags } from "../src/viewer/search.js";
+import { filterCards, searchCards, searchTags } from "../src/viewer/search.js";
 
 const node = (i: number, label: string, card_count: number, slug = label.replace(/ /g, "-")): GraphNode => ({
   i,
@@ -42,6 +42,29 @@ describe("searchTags", () => {
   it("returns nothing for an empty query and respects the limit", () => {
     expect(labels("  ")).toEqual([]);
     expect(labels("r", 2)).toEqual(["ramp", "removal"]);
+  });
+});
+
+describe("searchCards", () => {
+  const cards = [
+    { name: "Sol Ring" },
+    { name: "Solemn Simulacrum" },
+    { name: "Ring of Three Wishes" },
+    { name: "Mana Vault // Sol" },
+    { name: "Altaïr Ibn-La'Ahad" },
+  ];
+  const names = (q: string, limit?: number) => searchCards(cards, q, limit).map((c) => c.name);
+
+  it("ranks exact, then prefix (on any face), then substring, alphabetically within each", () => {
+    expect(names("sol")).toEqual(["Mana Vault // Sol", "Sol Ring", "Solemn Simulacrum"]);
+    expect(names("sol ring")).toEqual(["Sol Ring"]);
+    expect(names("ring")).toEqual(["Ring of Three Wishes", "Sol Ring"]);
+  });
+
+  it("ignores accents and case, and respects the limit", () => {
+    expect(names("ALTAIR")).toEqual(["Altaïr Ibn-La'Ahad"]);
+    expect(names("s", 2)).toHaveLength(2);
+    expect(names(" ")).toEqual([]);
   });
 });
 

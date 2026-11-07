@@ -119,6 +119,13 @@ export class GraphRenderer {
     this.cosmograph.zoomToPoint(index, 700);
   }
 
+  /** Select just these points (no neighbors) and zoom to fit them. */
+  focusPoints(indices: number[]) {
+    this.cosmograph.setFocusedPoint(undefined);
+    this.cosmograph.selectPoints(indices, false, false);
+    this.cosmograph.fitViewByIndices(indices, 700);
+  }
+
   clearSelection() {
     this.cosmograph.setFocusedPoint(undefined);
     this.cosmograph.unselectAll();

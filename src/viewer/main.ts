@@ -1,10 +1,11 @@
 import { DEFAULT_K, DEFAULT_SCORE } from "../config.js";
 import { GraphRenderer } from "../graph/renderer.js";
-import type { Card, Graph } from "../lib/types.js";
+import type { Card, Graph, GraphNode } from "../lib/types.js";
 import { buildCardIndex, type CardIndex } from "./cardIndex.js";
+import { CardPanel } from "./cardPanel.js";
 import { CardPopup } from "./cardPopup.js";
 import { colorNodes, type ColorMode } from "./colors.js";
-import { TagSearch } from "./tagSearch.js";
+import { SearchBox } from "./searchBox.js";
 import { adjacencyByScore, linkRows, pointRows, visibleEdges, type Filter } from "./viewData.js";
 
 const GRAPH_URL = "/data/out/graph.json";
@@ -13,17 +14,17 @@ const CARDS_URL = "/data/out/cards.json";
 const status = document.getElementById("status")!;
 const setStatus = (text: string) => (status.textContent = text);
 
-async function loadCards(graph: Graph): Promise<CardIndex> {
+async function loadCards(): Promise<Card[]> {
   const res = await fetch(CARDS_URL);
   if (!res.ok) throw new Error(`Could not load ${CARDS_URL} (${res.status})`);
-  const { cards } = (await res.json()) as { cards: Card[] };
-  return buildCardIndex(graph, cards);
+  return ((await res.json()) as { cards: Card[] }).cards;
 }
 
 async function main() {
   const res = await fetch(GRAPH_URL);
   if (!res.ok) throw new Error(`Could not load ${GRAPH_URL} (${res.status}). Run npm run prep first.`);
   const graph = (await res.json()) as Graph;
+  const nodeById = new Map(graph.nodes.map((n) => [n.id, n]));
 
   const adjacency = adjacencyByScore(graph);
   const filter: Filter = { score: DEFAULT_SCORE, k: DEFAULT_K, min: 0, hierarchy: true };
@@ -33,14 +34,17 @@ async function main() {
   const visible = visibleEdges(graph, adjacency, filter);
   if (import.meta.env.DEV) console.log(`[viewer] visible edges: ${visible.length} in ${(performance.now() - tFilter).toFixed(1)} ms`);
 
+  /** Cards with at least one tag; the rest have nothing to show on the graph. */
+  let cards: Card[] | undefined;
   let cardIndex: CardIndex | undefined;
   let openTag: number | undefined;
-  const closePopup = () => {
+  const closeAll = () => {
     openTag = undefined;
     popup.close();
+    cardPanel.close();
     renderer.clearSelection();
   };
-  const popup = new CardPopup(document.body, closePopup);
+  const popup = new CardPopup(document.body, closeAll);
 
   const url = new URL(window.location.href);
   let dimensions: 2 | 3 = url.searchParams.get("view") === "3d" ? 3 : 2;
@@ -57,26 +61,43 @@ async function main() {
       setStatus(`${points} tags, ${links} links${import.meta.env.DEV ? ` · drawn in ${ms.toFixed(0)} ms` : ""}`);
       if (cardsRequested) return;
       cardsRequested = true;
-      loadCards(graph)
-        .then((index) => {
-          cardIndex = index;
-          if (openTag !== undefined) popup.setCards(index.cardsForTag(openTag));
+      loadCards()
+        .then((loaded) => {
+          cards = loaded.filter((c) => c.tags.length > 0);
+          cardIndex = buildCardIndex(graph, loaded);
+          if (openTag !== undefined) popup.setCards(cardIndex.cardsForTag(openTag));
+          search.refresh();
         })
         .catch((e: Error) => setStatus(e.message));
     },
-    onPointClick: (index, at) => openPopup(index, at),
-    onBackgroundClick: () => popup.isOpen && closePopup(),
+    onPointClick: (index, at) => openTagPopup(index, at),
+    onBackgroundClick: () => (popup.isOpen || cardPanel.isOpen) && closeAll(),
   });
 
-  const openPopup = (index: number, at?: { x: number; y: number }) => {
+  const openTagPopup = (index: number, at?: { x: number; y: number }) => {
+    cardPanel.close();
     openTag = index;
     popup.open(graph.nodes[index]!, cardIndex?.cardsForTag(index) ?? null, at);
   };
 
-  new TagSearch(document.body, graph.nodes, (node) => {
+  const focusTag = (node: GraphNode) => {
     renderer.focusPoint(node.i);
-    openPopup(node.i);
-  });
+    openTagPopup(node.i);
+  };
+
+  const cardPanel = new CardPanel(document.body, focusTag, closeAll);
+
+  const focusCard = (card: Card) => {
+    const tags = [...new Set(card.tags.map((t) => nodeById.get(t.id)).filter((n): n is GraphNode => !!n))].sort(
+      (a, b) => b.card_count - a.card_count,
+    );
+    popup.close();
+    openTag = undefined;
+    cardPanel.open(card, tags);
+    if (tags.length) renderer.focusPoints(tags.map((n) => n.i));
+  };
+
+  const search = new SearchBox(document.body, graph.nodes, () => cards, { onTag: focusTag, onCard: focusCard });
 
   const viewToggle = document.createElement("button");
   viewToggle.className = "view-toggle";
@@ -96,7 +117,7 @@ async function main() {
   document.body.append(viewToggle);
 
   window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && popup.isOpen) closePopup();
+    if (e.key === "Escape" && (popup.isOpen || cardPanel.isOpen)) closeAll();
   });
 }
 
