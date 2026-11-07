@@ -1,13 +1,23 @@
 import { DEFAULT_K, DEFAULT_SCORE } from "../config.js";
 import { GraphRenderer } from "../graph/renderer.js";
-import type { Graph } from "../lib/types.js";
+import type { Card, Graph } from "../lib/types.js";
+import { buildCardIndex, type CardIndex } from "./cardIndex.js";
+import { CardPopup } from "./cardPopup.js";
 import { colorNodes, type ColorMode } from "./colors.js";
 import { adjacencyByScore, linkRows, pointRows, visibleEdges, type Filter } from "./viewData.js";
 
 const GRAPH_URL = "/data/out/graph.json";
+const CARDS_URL = "/data/out/cards.json";
 
 const status = document.getElementById("status")!;
 const setStatus = (text: string) => (status.textContent = text);
+
+async function loadCards(graph: Graph): Promise<CardIndex> {
+  const res = await fetch(CARDS_URL);
+  if (!res.ok) throw new Error(`Could not load ${CARDS_URL} (${res.status})`);
+  const { cards } = (await res.json()) as { cards: Card[] };
+  return buildCardIndex(graph, cards);
+}
 
 async function main() {
   const res = await fetch(GRAPH_URL);
@@ -22,15 +32,42 @@ async function main() {
   const visible = visibleEdges(graph, adjacency, filter);
   if (import.meta.env.DEV) console.log(`[viewer] visible edges: ${visible.length} in ${(performance.now() - tFilter).toFixed(1)} ms`);
 
+  let cardIndex: CardIndex | undefined;
+  let openTag: number | undefined;
+  const closePopup = () => {
+    openTag = undefined;
+    popup.close();
+    renderer.clearSelection();
+  };
+  const popup = new CardPopup(document.body, closePopup);
+
   const { colors } = colorNodes(graph, colorMode);
-  new GraphRenderer(document.getElementById("graph")!, {
+  let cardsRequested = false;
+  const renderer = new GraphRenderer(document.getElementById("graph")!, {
     points: pointRows(graph, colors),
     links: linkRows(graph, visible),
     showClusterLabels: colorMode === "community",
     onRebuilt: ({ points, links }) => {
       const ms = performance.now(); // since page navigation started
       setStatus(`${points} tags, ${links} links${import.meta.env.DEV ? ` · drawn in ${ms.toFixed(0)} ms` : ""}`);
+      if (cardsRequested) return;
+      cardsRequested = true;
+      loadCards(graph)
+        .then((index) => {
+          cardIndex = index;
+          if (openTag !== undefined) popup.setCards(index.cardsForTag(openTag));
+        })
+        .catch((e: Error) => setStatus(e.message));
     },
+    onPointClick: (index, at) => {
+      openTag = index;
+      popup.open(graph.nodes[index]!, cardIndex?.cardsForTag(index) ?? null, at);
+    },
+    onBackgroundClick: () => popup.isOpen && closePopup(),
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && popup.isOpen) closePopup();
   });
 }
 

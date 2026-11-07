@@ -29,6 +29,9 @@ export interface RendererOptions {
   simulation?: SimulationSettings;
   /** Called once per data rebuild with what was drawn. */
   onRebuilt?: (stats: { points: number; links: number }) => void;
+  /** A point was clicked; `at` is the click in viewport pixels. */
+  onPointClick?: (index: number, at: { x: number; y: number }) => void;
+  onBackgroundClick?: () => void;
 }
 
 function simulationConfig(s: SimulationSettings): CosmographConfig {
@@ -88,7 +91,15 @@ export class GraphRenderer {
 
       onGraphRebuilt: ({ pointsCount, linksCount }) => opts.onRebuilt?.({ points: pointsCount, links: linksCount }),
       onSimulationEnd: () => this.cosmograph.fitView(600),
+
+      selectPointOnClick: true,
+      onPointClick: (index, _pos, event) => opts.onPointClick?.(index, { x: event.clientX, y: event.clientY }),
+      onBackgroundClick: () => opts.onBackgroundClick?.(),
     });
+  }
+
+  clearSelection() {
+    this.cosmograph.unselectAll();
   }
 
   destroy(): Promise<void> {
