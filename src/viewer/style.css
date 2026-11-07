@@ -1,0 +1,22 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: #222327;
+  color: #e6e6e6;
+  font: 13px/1.4 system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+}
+
+#graph {
+  position: absolute;
+  inset: 0;
+}
+
+#status {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  color: #9aa0a6;
+  pointer-events: none;
+}

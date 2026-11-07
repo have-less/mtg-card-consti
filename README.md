@@ -23,6 +23,16 @@ then writes:
 It ends with a summary (tag, card and edge counts, NPMI spread, community sizes, file sizes).
 Paste that summary back into the project thread so we can tune the graph.
 
+### Viewer
+
+```sh
+npm run dev       # after npm run prep; open http://localhost:5173
+```
+
+Tags are nodes, colored by community, linked by each tag's top 5 edges by NPMI plus
+hierarchy links (amber). Cosmograph loads DuckDB-Wasm from the jsDelivr CDN, so the
+first load needs internet. All Cosmograph calls live in `src/graph/renderer.ts`.
+
 ### Options
 
 ```sh
