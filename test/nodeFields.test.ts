@@ -33,9 +33,10 @@ describe("dominantColor", () => {
     expect(dominantColor(["C", "C", "G"])).toBe("C");
   });
 
-  it("breaks ties in WUBRG, M, C order and defaults to C", () => {
-    expect(dominantColor(["G", "W"])).toBe("W");
-    expect(dominantColor(["C", "UB"])).toBe("M");
+  it("calls a tie for most common M and defaults to C", () => {
+    expect(dominantColor(["W", "U", "B", "R", "G"])).toBe("M");
+    expect(dominantColor(["G", "W", "G", "W", "C"])).toBe("M");
+    expect(dominantColor(["C", "C", "W"])).toBe("C");
     expect(dominantColor([])).toBe("C");
   });
 });

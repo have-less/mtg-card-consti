@@ -49,7 +49,8 @@ const COLOR_ORDER: readonly DominantColor[] = ["W", "U", "B", "R", "G", "M", "C"
 /**
  * The most common bucket over a tag's cards, given each card's color identity
  * key ("C", "W", "UB", ...): one color counts as that color, two or more as M,
- * none as C. Ties go to WUBRG order, then M, then C. An empty set is C.
+ * none as C. A tie for most common is M, since cycles often hold one card of
+ * each color. An empty set is C.
  */
 export function dominantColor(colorKeys: Iterable<string>): DominantColor {
   const counts = new Map<DominantColor, number>();
@@ -59,12 +60,16 @@ export function dominantColor(colorKeys: Iterable<string>): DominantColor {
   }
   let best: DominantColor = "C";
   let bestCount = 0;
+  let tied = false;
   for (const c of COLOR_ORDER) {
     const n = counts.get(c) ?? 0;
     if (n > bestCount) {
       best = c;
       bestCount = n;
+      tied = false;
+    } else if (n > 0 && n === bestCount) {
+      tied = true;
     }
   }
-  return best;
+  return tied ? "M" : best;
 }

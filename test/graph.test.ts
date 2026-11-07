@@ -104,8 +104,9 @@ describe("graph.json shape", () => {
     expect(removal).toMatchObject({ card_count: 4, is_leaf: false, depth: 0, root_parent: removal.i });
     expect(node(g, "t-creature-removal")).toMatchObject({ depth: 1, root_parent: removal.i });
     // Cards: c1 B, c2 UB (M), c3 R, c4 colorless
-    expect(node(g, "t-creature-removal").dominant_color).toBe("B"); // B, M, R tie: WUBRG order
+    expect(node(g, "t-creature-removal").dominant_color).toBe("M"); // B, M, R tie
     expect(node(g, "t-artifact-removal").dominant_color).toBe("M"); // M, C tie
+    expect(node(g, "t-draw").dominant_color).toBe("M"); // B, M, R tie
     expect(node(g, "t-ramp").dominant_color).toBe("C");
     expect(node(g, "t-draw").degree_shipped).toBe(1);
     expect(removal.degree_shipped).toBe(0);
