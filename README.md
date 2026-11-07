@@ -33,6 +33,12 @@ Tags are nodes, colored by community, linked by each tag's top 5 edges by NPMI p
 hierarchy links (amber). Cosmograph loads DuckDB-Wasm from the jsDelivr CDN, so the
 first load needs internet. All Cosmograph calls live in `src/graph/renderer.ts`.
 
+### Deploy
+
+`npm run build` copies `data/out/graph.json` and `cards.json` into `dist/` and fails if
+they're missing. On Vercel, `vercel.json` runs `npm run prep && npm run build`, so each
+deploy downloads fresh Scryfall bulk data and rebuilds the graph.
+
 ### Options
 
 ```sh
