@@ -1,4 +1,14 @@
-import type { RawTag, CardTag } from "./types.js";
+import { MISSING_WEIGHT, WEIGHT_LEVELS } from "../config.js";
+import type { RawTag, RawTagging, CardTag } from "./types.js";
+
+/** Turn a raw tagging weight (level name or number) into a number. */
+export function taggingWeight(raw: RawTagging["weight"], levels = WEIGHT_LEVELS): number {
+  if (raw === undefined || raw === null) return MISSING_WEIGHT;
+  if (typeof raw === "number") return raw;
+  const w = levels[raw.toLowerCase().replace(/[_\s-]/g, "")];
+  if (w === undefined) throw new Error(`Unknown tagging weight "${raw}"; add it to WEIGHT_LEVELS in src/config.ts`);
+  return w;
+}
 
 export interface TagIndex {
   tags: Map<string, RawTag>;
@@ -33,7 +43,7 @@ export function indexTags(rawTags: Iterable<RawTag>): TagIndex {
     for (const tg of t.taggings ?? []) {
       let list = cardTags.get(tg.oracle_id);
       if (!list) cardTags.set(tg.oracle_id, (list = []));
-      list.push({ id: t.id, weight: tg.weight ?? 1 });
+      list.push({ id: t.id, weight: taggingWeight(tg.weight) });
     }
   }
 

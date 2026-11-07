@@ -5,16 +5,27 @@
   "type": "module",
   "description": "Local prototype: Scryfall oracle tags as an interactive Cosmograph graph",
   "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
     "prep": "tsx src/prep.ts",
     "prep:fixture": "tsx src/prep.ts --offline --raw-dir test/fixtures --out-dir data/fixture-out",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "graphology-types": "^0.24.8",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
+    "vite": "^7.3.7",
     "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "@cosmograph/cosmograph": "^2.5.1",
+    "graphology": "^0.26.0",
+    "graphology-communities-louvain": "^2.0.2"
   }
 }

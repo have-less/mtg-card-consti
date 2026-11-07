@@ -16,27 +16,47 @@ npm run prep      # downloads Scryfall data (about 30 MB gzipped), writes data/o
 `npm run prep` downloads `oracle_cards` and `oracle_tags` into `data/raw/` once per day,
 then writes:
 
-- `data/out/graph.json`: tag nodes, hierarchy edges, co-occurrence edges (`count` and `score`)
+- `data/out/graph.json`: tag nodes (with community, top-level parent and dominant color),
+  hierarchy edges, and each tag's strongest co-occurrence edges. Edges point at nodes by array index.
 - `data/out/cards.json`: trimmed card data with each card's direct tags
 
-It ends with a summary (tag, card and edge counts, edge spread, file sizes).
+It ends with a summary (tag, card and edge counts, NPMI spread, community sizes, file sizes).
 Paste that summary back into the project thread so we can tune the graph.
+
+### Viewer
+
+```sh
+npm run dev       # after npm run prep; open http://localhost:5173
+```
+
+Tags are nodes, colored by community, linked by each tag's top 5 edges by NPMI plus
+hierarchy links (amber). Cosmograph loads DuckDB-Wasm from the jsDelivr CDN, so the
+first load needs internet. All Cosmograph calls live in `src/graph/renderer.ts`.
 
 ### Options
 
 ```sh
 npm run prep -- --offline        # reuse the newest files in data/raw/, no network
 npm run prep -- --force          # re-download even if today's files exist
-npm run prep -- --min-count 3    # drop co-occurrence edges sharing fewer than 3 cards (default 2)
+npm run prep -- --min-count 5    # drop co-occurrence pairs sharing fewer than 5 cards (default 3)
 npm run prep:fixture             # run on the tiny test fixtures instead of real data
 ```
 
-`PREP_MIN_COUNT` works as an environment variable too.
+`PREP_MIN_COUNT` works as an environment variable too. Every other tuning value
+(edges shipped per tag, community settings, tagging weight levels) is in `src/config.ts`.
 
 ## How edges work
 
 - **Hierarchy:** parent tag to child tag, straight from Scryfall's `parent_ids` / `child_ids`.
 - **Co-occurrence:** two *leaf* tags (tags with no children) that appear on the same card.
-  `count` = shared cards; `score` = sum of (weight A x weight B) over those cards.
   Parent tags never get co-occurrence edges, only hierarchy edges.
+  - `count` = shared cards
+  - `score` = sum of (weight A x weight B) over those cards. Scryfall stores weight as a level
+    (`median`, `strong`, `very_strong`), mapped to numbers by `WEIGHT_LEVELS` in `src/config.ts`.
+  - `npmi` = normalized pointwise mutual information: 0 at chance, 1 when the tags always appear together.
+    Pairs at or below chance are dropped.
+  - `cosine` = count / sqrt(cards with A x cards with B)
+- Only edges in the top 30 of either endpoint under any of those four scores are shipped.
 - A parent tag's `card_count` includes every card tagged with any of its descendants.
+- **Communities:** Louvain on each leaf tag's top 5 edges by NPMI, seeded so rebuilds match.
+  Community 0 is the largest; -1 means the tag has no edges.
