@@ -237,6 +237,74 @@ body {
   font-size: 12px;
 }
 
+.card-preview {
+  position: fixed;
+  z-index: 12;
+  box-sizing: border-box;
+  width: 280px;
+  max-height: calc(100vh - 24px);
+  overflow: hidden;
+  padding: 10px;
+  background: rgba(30, 31, 36, 0.98);
+  border: 1px solid #3a3c44;
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.card-preview[hidden] {
+  display: none;
+}
+
+.card-preview-img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 488 / 680;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  background: #2c2e35;
+}
+
+.card-preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.card-preview-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #f0f0f0;
+}
+
+.card-preview-cost {
+  flex: none;
+  color: #9aa0a6;
+  font-size: 12px;
+}
+
+.card-preview-type {
+  margin-top: 2px;
+  color: #9aa0a6;
+  font-size: 12px;
+}
+
+.card-preview-text {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #3a3c44;
+  white-space: pre-line;
+  font-size: 12px;
+  color: #cfd2d6;
+}
+
+.card-preview-set {
+  margin-top: 6px;
+  color: #7d828a;
+  font-size: 11px;
+}
+
 .view-toggle {
   position: fixed;
   z-index: 11;

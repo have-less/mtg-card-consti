@@ -1,5 +1,6 @@
-import type { GraphNode } from "../lib/types.js";
+import type { Card, GraphNode } from "../lib/types.js";
 import type { TagCard } from "./cardIndex.js";
+import { CardPreview } from "./cardPreview.js";
 import { filterCards } from "./search.js";
 
 const PAGE_SIZE = 50;
@@ -26,8 +27,11 @@ export class CardPopup {
   private expected = 0;
   private cards: TagCard[] = [];
   private shown = 0;
+  private readonly preview: CardPreview;
+  private readonly rowCards = new WeakMap<Element, Card>();
 
   constructor(parent: HTMLElement, onClose: () => void) {
+    this.preview = new CardPreview(parent);
     const header = el("div", "card-popup-header");
     const close = el("button", "card-popup-close", "✕");
     close.title = "Close (Esc)";
@@ -41,8 +45,15 @@ export class CardPopup {
     this.root.append(header, this.filter, this.list);
     this.root.hidden = true;
     this.list.addEventListener("scroll", () => {
+      this.preview.hide();
       if (this.list.scrollTop + this.list.clientHeight > this.list.scrollHeight - 200) this.appendPage();
     });
+    this.list.addEventListener("mouseover", (e) => {
+      const row = (e.target as Element).closest(".card-row");
+      const card = row && this.rowCards.get(row);
+      if (card) this.preview.show(card, row.getBoundingClientRect(), this.root.getBoundingClientRect());
+    });
+    this.list.addEventListener("mouseleave", () => this.preview.hide());
     parent.append(this.root);
   }
 
@@ -74,6 +85,7 @@ export class CardPopup {
   }
 
   private render() {
+    this.preview.hide();
     this.list.replaceChildren();
     this.list.scrollTop = 0;
     this.shown = 0;
@@ -92,12 +104,18 @@ export class CardPopup {
   }
 
   close() {
+    this.preview.hide();
     this.root.hidden = true;
   }
 
   private appendPage() {
     const end = Math.min(this.cards.length, this.shown + PAGE_SIZE);
-    for (; this.shown < end; this.shown++) this.list.append(cardRow(this.cards[this.shown]!));
+    for (; this.shown < end; this.shown++) {
+      const { card } = this.cards[this.shown]!;
+      const row = cardRow(card);
+      this.rowCards.set(row, card);
+      this.list.append(row);
+    }
   }
 
   private place(at?: { x: number; y: number }) {
@@ -115,7 +133,7 @@ export class CardPopup {
   }
 }
 
-function cardRow({ card }: TagCard): HTMLElement {
+function cardRow(card: Card): HTMLElement {
   const row = el("a", "card-row");
   row.href = card.scryfall_uri;
   row.target = "_blank";
