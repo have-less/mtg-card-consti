@@ -6,6 +6,7 @@ import { CardPanel } from "../viewer/cardPanel.js";
 import { CardPopup } from "../viewer/cardPopup.js";
 import { colorNodes } from "../viewer/colors.js";
 import { loadCards, loadGraph } from "../viewer/data.js";
+import { dimensionsFromUrl, setDimensionsInUrl } from "../viewer/dimensions.js";
 import { cardLinks, deckCardRows, deckTagRows, deckTags, type DeckTag, type Rows } from "./deckGraph.js";
 import { isLand, matchDeck, parseDeckList, type DeckMatch } from "./deckList.js";
 import { DeckPanel, type DeckView } from "./deckPanel.js";
@@ -32,8 +33,8 @@ async function main() {
   const { colors } = colorNodes(graph, "community");
 
   const url = new URL(window.location.href);
-  let view: DeckView = url.searchParams.get("view") === "cards" ? "cards" : "tags";
-  let dimensions: 2 | 3 = url.searchParams.get("dim") === "3d" ? 3 : 2;
+  let view: DeckView = url.searchParams.get("show") === "cards" ? "cards" : "tags";
+  let dimensions = dimensionsFromUrl(url);
   let minCards = DECK_MIN_TAG_CARDS;
   const hidden = loadHidden();
   let hideLands = localStorage.getItem(HIDE_LANDS_KEY) === "1";
@@ -55,10 +56,9 @@ async function main() {
   const popup = new CardPopup(document.body, closeAll);
 
   const syncUrl = () => {
-    if (view === "cards") url.searchParams.set("view", "cards");
-    else url.searchParams.delete("view");
-    if (dimensions === 3) url.searchParams.set("dim", "3d");
-    else url.searchParams.delete("dim");
+    if (view === "cards") url.searchParams.set("show", "cards");
+    else url.searchParams.delete("show");
+    setDimensionsInUrl(url, dimensions);
     history.replaceState(null, "", url);
   };
 

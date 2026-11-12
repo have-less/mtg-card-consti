@@ -1,3 +1,4 @@
+import { dimensionToggle, type Dimensions } from "../viewer/dimensions.js";
 import { el } from "../viewer/dom.js";
 import type { DeckTag } from "./deckGraph.js";
 import { TagFilter } from "./tagFilter.js";
@@ -8,7 +9,7 @@ export interface DeckPanelOptions {
   text: string;
   view: DeckView;
   minCards: number;
-  dimensions: 2 | 3;
+  dimensions: Dimensions;
   /** Tag ids hidden from both views; the panel edits this set in place. */
   hidden: Set<string>;
   hideLands: boolean;
@@ -16,7 +17,7 @@ export interface DeckPanelOptions {
   onHideLands: (hide: boolean) => void;
   onView: (view: DeckView) => void;
   onMinCards: (n: number) => void;
-  onDimensions: (d: 2 | 3) => void;
+  onDimensions: (d: Dimensions) => void;
   onHiddenChange: () => void;
 }
 
@@ -32,7 +33,6 @@ export class DeckPanel {
   private readonly viewButtons: Record<DeckView, HTMLButtonElement>;
   private readonly minRow = el("label", "deck-min");
   private readonly minValue = el("span");
-  private readonly dimButton = el("button", "deck-button deck-dim");
   private readonly landsRow = el("label", "deck-check");
   private readonly landsLabel = el("span");
   private readonly tagFilter: TagFilter;
@@ -70,15 +70,7 @@ export class DeckPanel {
     }
     this.setView(opts.view);
 
-    let dimensions = opts.dimensions;
-    const labelDim = () => (this.dimButton.textContent = dimensions === 3 ? "2D" : "3D");
-    labelDim();
-    this.dimButton.addEventListener("click", () => {
-      dimensions = dimensions === 3 ? 2 : 3;
-      labelDim();
-      opts.onDimensions(dimensions);
-    });
-    this.controls.append(segmented, this.dimButton);
+    this.controls.append(segmented, dimensionToggle("deck-button deck-dim", opts.dimensions, opts.onDimensions));
 
     const range = el("input");
     range.type = "range";
