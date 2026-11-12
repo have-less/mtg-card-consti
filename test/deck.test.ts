@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cardLinks, deckCardRows, deckTagRows, deckTags } from "../src/deck/deckGraph.js";
-import { matchDeck, normalizeName, parseDeckList } from "../src/deck/deckList.js";
+import { isLand, matchDeck, normalizeName, parseDeckList } from "../src/deck/deckList.js";
 import type { Card, Graph, GraphNode } from "../src/lib/types.js";
 
 const node = (i: number, id: string, community = -1): GraphNode => ({
@@ -64,6 +64,16 @@ describe("matchDeck", () => {
 
   it("normalizes names", () => {
     expect(normalizeName("  Fire//Ice ")).toBe("fire // ice");
+  });
+});
+
+describe("isLand", () => {
+  it("goes by the front face", () => {
+    expect(isLand({ type_line: "Basic Land — Island" })).toBe(true);
+    expect(isLand({ type_line: "Land Creature — Forest Dryad" })).toBe(true);
+    expect(isLand({ type_line: "Land // Land" })).toBe(true);
+    expect(isLand({ type_line: "Sorcery // Land" })).toBe(false);
+    expect(isLand({ type_line: "Enchantment — Aura" })).toBe(false);
   });
 });
 

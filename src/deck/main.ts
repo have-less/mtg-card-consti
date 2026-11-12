@@ -6,11 +6,12 @@ import { CardPopup } from "../viewer/cardPopup.js";
 import { colorNodes } from "../viewer/colors.js";
 import { loadCards, loadGraph } from "../viewer/data.js";
 import { cardLinks, deckCardRows, deckTagRows, deckTags, type DeckTag, type Rows } from "./deckGraph.js";
-import { matchDeck, parseDeckList } from "./deckList.js";
+import { isLand, matchDeck, parseDeckList, type DeckMatch } from "./deckList.js";
 import { DeckPanel, type DeckView } from "./deckPanel.js";
 
 const STORAGE_KEY = "mtg-tag-graph:deck";
 const HIDDEN_KEY = "mtg-tag-graph:deck-hidden-tags";
+const HIDE_LANDS_KEY = "mtg-tag-graph:deck-hide-lands";
 
 function loadHidden(): Set<string> {
   try {
@@ -34,7 +35,11 @@ async function main() {
   let dimensions: 2 | 3 = url.searchParams.get("dim") === "3d" ? 3 : 2;
   let minCards = DECK_MIN_TAG_CARDS;
   const hidden = loadHidden();
+  let hideLands = localStorage.getItem(HIDE_LANDS_KEY) === "1";
   let cards: Card[] | undefined;
+  let names: string[] = [];
+  let match: DeckMatch = { cards: [], missing: [] };
+  /** The matched cards drawn, without lands when they're hidden. */
   let deck: Card[] = [];
   let tags: DeckTag[] = [];
   /** Tags drawn in the tag view; point index k is shown[k]. */
@@ -114,11 +119,16 @@ async function main() {
   const map = (text: string) => {
     if (!cards) return;
     localStorage.setItem(STORAGE_KEY, text);
-    const names = parseDeckList(text);
-    const match = matchDeck(names, cards);
-    deck = match.cards;
+    names = parseDeckList(text);
+    match = matchDeck(names, cards);
+    refresh();
+  };
+
+  const refresh = () => {
+    const lands = match.cards.filter(isLand).length;
+    deck = hideLands ? match.cards.filter((c) => !isLand(c)) : match.cards;
     tags = deckTags(graph, deck);
-    panel.showResult(deck.length, names.length, tags, match.missing);
+    panel.showResult(match.cards.length, names.length, lands, tags, match.missing);
     if (deck.length === 0) setStatus("");
     void draw();
   };
@@ -129,7 +139,13 @@ async function main() {
     minCards,
     dimensions,
     hidden,
+    hideLands,
     onMap: map,
+    onHideLands: (on) => {
+      hideLands = on;
+      localStorage.setItem(HIDE_LANDS_KEY, on ? "1" : "0");
+      refresh();
+    },
     onHiddenChange: () => {
       localStorage.setItem(HIDDEN_KEY, JSON.stringify([...hidden]));
       void draw();

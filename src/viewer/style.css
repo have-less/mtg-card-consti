@@ -484,6 +484,19 @@ body {
   font-size: 12px;
 }
 
+.deck-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #cfd2d6;
+  cursor: pointer;
+}
+
+.deck-check input {
+  margin: 0;
+  accent-color: #5da5da;
+}
+
 .tag-filter {
   display: flex;
   flex-direction: column;

@@ -43,6 +43,11 @@ export function parseDeckList(text: string): string[] {
   return [...names.values()];
 }
 
+/** A land by its front face, so a spell with a land back face stays a spell. */
+export function isLand(card: Pick<Card, "type_line">): boolean {
+  return /\bLand\b/.test(card.type_line.split(" // ")[0]!);
+}
+
 export interface DeckMatch {
   /** Matched cards in list order, each once. */
   cards: Card[];

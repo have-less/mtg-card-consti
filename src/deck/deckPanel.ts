@@ -10,7 +10,9 @@ export interface DeckPanelOptions {
   dimensions: 2 | 3;
   /** Tag ids hidden from both views; the panel edits this set in place. */
   hidden: Set<string>;
+  hideLands: boolean;
   onMap: (text: string) => void;
+  onHideLands: (hide: boolean) => void;
   onView: (view: DeckView) => void;
   onMinCards: (n: number) => void;
   onDimensions: (d: 2 | 3) => void;
@@ -37,10 +39,17 @@ export class DeckPanel {
   private readonly minRow = el("label", "deck-min");
   private readonly minValue = el("span");
   private readonly dimButton = el("button", "deck-button deck-dim");
+  private readonly landsRow = el("label", "deck-check");
+  private readonly landsLabel = el("span");
   private readonly tagFilter: TagFilter;
 
   constructor(parent: HTMLElement, opts: DeckPanelOptions) {
     this.tagFilter = new TagFilter(opts.hidden, opts.onHiddenChange);
+    const landsBox = el("input");
+    landsBox.type = "checkbox";
+    landsBox.checked = opts.hideLands;
+    landsBox.addEventListener("change", () => opts.onHideLands(landsBox.checked));
+    this.landsRow.append(landsBox, this.landsLabel);
     const root = el("div", "deck-panel");
     const header = el("div", "deck-header");
     const nav = el("a", "deck-nav", "Tag graph →");
@@ -94,6 +103,7 @@ export class DeckPanel {
     this.minRow.hidden = true;
     this.missing.hidden = true;
     this.tagFilter.root.hidden = true;
+    this.landsRow.hidden = true;
     root.append(
       header,
       this.input,
@@ -101,6 +111,7 @@ export class DeckPanel {
       this.summary,
       this.missing,
       this.controls,
+      this.landsRow,
       this.minRow,
       this.tagFilter.root,
     );
@@ -113,10 +124,12 @@ export class DeckPanel {
     this.mapButton.textContent = "Map deck";
   }
 
-  showResult(found: number, total: number, tags: readonly DeckTag[], missing: readonly string[]) {
+  showResult(found: number, total: number, lands: number, tags: readonly DeckTag[], missing: readonly string[]) {
     this.summary.textContent = total
       ? `${found} of ${total} cards found · ${tags.length} tags`
       : "No cards in the list";
+    this.landsLabel.textContent = `Hide lands (${lands})`;
+    this.landsRow.hidden = found === 0;
     this.tagFilter.setTags(tags);
     this.tagFilter.root.hidden = found === 0;
     this.missing.replaceChildren(el("summary", undefined, `${missing.length} not found`));
