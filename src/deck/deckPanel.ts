@@ -1,3 +1,6 @@
+import type { DeckTag } from "./deckGraph.js";
+import { TagFilter } from "./tagFilter.js";
+
 export type DeckView = "tags" | "cards";
 
 export interface DeckPanelOptions {
@@ -5,10 +8,13 @@ export interface DeckPanelOptions {
   view: DeckView;
   minCards: number;
   dimensions: 2 | 3;
+  /** Tag ids hidden from both views; the panel edits this set in place. */
+  hidden: Set<string>;
   onMap: (text: string) => void;
   onView: (view: DeckView) => void;
   onMinCards: (n: number) => void;
   onDimensions: (d: 2 | 3) => void;
+  onHiddenChange: () => void;
 }
 
 const MAX_MIN_CARDS = 10;
@@ -31,8 +37,10 @@ export class DeckPanel {
   private readonly minRow = el("label", "deck-min");
   private readonly minValue = el("span");
   private readonly dimButton = el("button", "deck-button deck-dim");
+  private readonly tagFilter: TagFilter;
 
   constructor(parent: HTMLElement, opts: DeckPanelOptions) {
+    this.tagFilter = new TagFilter(opts.hidden, opts.onHiddenChange);
     const root = el("div", "deck-panel");
     const header = el("div", "deck-header");
     const nav = el("a", "deck-nav", "Tag graph →");
@@ -85,7 +93,17 @@ export class DeckPanel {
     this.controls.hidden = true;
     this.minRow.hidden = true;
     this.missing.hidden = true;
-    root.append(header, this.input, this.mapButton, this.summary, this.missing, this.controls, this.minRow);
+    this.tagFilter.root.hidden = true;
+    root.append(
+      header,
+      this.input,
+      this.mapButton,
+      this.summary,
+      this.missing,
+      this.controls,
+      this.minRow,
+      this.tagFilter.root,
+    );
     parent.append(root);
   }
 
@@ -95,10 +113,12 @@ export class DeckPanel {
     this.mapButton.textContent = "Map deck";
   }
 
-  showResult(found: number, total: number, tags: number, missing: readonly string[]) {
+  showResult(found: number, total: number, tags: readonly DeckTag[], missing: readonly string[]) {
     this.summary.textContent = total
-      ? `${found} of ${total} cards found · ${tags} tags`
+      ? `${found} of ${total} cards found · ${tags.length} tags`
       : "No cards in the list";
+    this.tagFilter.setTags(tags);
+    this.tagFilter.root.hidden = found === 0;
     this.missing.replaceChildren(el("summary", undefined, `${missing.length} not found`));
     const list = el("div", "deck-missing-list");
     list.textContent = missing.join("\n");

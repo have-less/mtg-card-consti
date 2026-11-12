@@ -10,6 +10,16 @@ import { matchDeck, parseDeckList } from "./deckList.js";
 import { DeckPanel, type DeckView } from "./deckPanel.js";
 
 const STORAGE_KEY = "mtg-tag-graph:deck";
+const HIDDEN_KEY = "mtg-tag-graph:deck-hidden-tags";
+
+function loadHidden(): Set<string> {
+  try {
+    const ids: unknown = JSON.parse(localStorage.getItem(HIDDEN_KEY) ?? "[]");
+    return new Set(Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
 
 const status = document.getElementById("status")!;
 const setStatus = (text: string) => (status.textContent = text);
@@ -23,6 +33,7 @@ async function main() {
   let view: DeckView = url.searchParams.get("view") === "cards" ? "cards" : "tags";
   let dimensions: 2 | 3 = url.searchParams.get("dim") === "3d" ? 3 : 2;
   let minCards = DECK_MIN_TAG_CARDS;
+  const hidden = loadHidden();
   let cards: Card[] | undefined;
   let deck: Card[] = [];
   let tags: DeckTag[] = [];
@@ -46,8 +57,8 @@ async function main() {
   };
 
   const rows = (): Rows => {
-    if (view === "cards") return deckCardRows(deck, cardLinks(deck, DECK_CARD_K));
-    shown = tags.filter((t) => t.cards.length >= minCards);
+    if (view === "cards") return deckCardRows(deck, cardLinks(deck, DECK_CARD_K, hidden));
+    shown = tags.filter((t) => t.cards.length >= minCards && !hidden.has(t.node.id));
     return deckTagRows(graph, shown, colors);
   };
 
@@ -107,7 +118,7 @@ async function main() {
     const match = matchDeck(names, cards);
     deck = match.cards;
     tags = deckTags(graph, deck);
-    panel.showResult(deck.length, names.length, tags.length, match.missing);
+    panel.showResult(deck.length, names.length, tags, match.missing);
     if (deck.length === 0) setStatus("");
     void draw();
   };
@@ -117,7 +128,12 @@ async function main() {
     view,
     minCards,
     dimensions,
+    hidden,
     onMap: map,
+    onHiddenChange: () => {
+      localStorage.setItem(HIDDEN_KEY, JSON.stringify([...hidden]));
+      void draw();
+    },
     onView: (v) => {
       view = v;
       syncUrl();

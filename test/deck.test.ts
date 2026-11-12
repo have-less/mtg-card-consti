@@ -112,6 +112,10 @@ describe("deck card view", () => {
     ]);
   });
 
+  it("ignores hidden tags when counting shared tags", () => {
+    expect(cardLinks(deck, 5, new Set(["a", "c"]))).toEqual([{ a: 0, b: 1, shared: 1 }]);
+  });
+
   it("sizes cards by kept links and colors them by identity", () => {
     const { points, links } = deckCardRows(deck, cardLinks(deck, 5));
     expect(points.map((p) => p.size)).toEqual([3, 2, 2, 1]);

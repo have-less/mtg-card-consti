@@ -83,9 +83,9 @@ export interface CardLink {
   shared: number;
 }
 
-/** Links between cards sharing tags: the union of each card's top k by shared count. */
-export function cardLinks(deck: readonly Card[], k: number): CardLink[] {
-  const tagSets = deck.map((c) => new Set(c.tags.map((t) => t.id)));
+/** Links between cards sharing tags (other than `ignore`): the union of each card's top k by shared count. */
+export function cardLinks(deck: readonly Card[], k: number, ignore: ReadonlySet<string> = new Set()): CardLink[] {
+  const tagSets = deck.map((c) => new Set(c.tags.map((t) => t.id).filter((id) => !ignore.has(id))));
   const all: CardLink[] = [];
   const byCard: CardLink[][] = deck.map(() => []);
   for (let a = 0; a < deck.length; a++) {

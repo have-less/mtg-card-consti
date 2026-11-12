@@ -484,6 +484,78 @@ body {
   font-size: 12px;
 }
 
+.tag-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  padding-top: 8px;
+  border-top: 1px solid #3a3c44;
+}
+
+.tag-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  color: #9aa0a6;
+  font-size: 12px;
+}
+
+.tag-filter-action {
+  margin-left: 8px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: #5da5da;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tag-filter-action:hover {
+  text-decoration: underline;
+}
+
+.tag-filter .tag-filter-query {
+  margin: 0;
+}
+
+.tag-filter-list {
+  max-height: 240px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.tag-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 2px;
+  cursor: pointer;
+}
+
+.tag-filter-row:hover {
+  background: #2c2e35;
+}
+
+.tag-filter-row input {
+  margin: 0;
+  accent-color: #5da5da;
+}
+
+.tag-filter-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-filter-row:has(input:not(:checked)) .tag-filter-label {
+  color: #7d828a;
+  text-decoration: line-through;
+}
+
 #status {
   position: absolute;
   left: 12px;
