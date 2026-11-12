@@ -1,15 +1,9 @@
 import type { Card, GraphNode } from "../lib/types.js";
+import { el } from "./dom.js";
 
 const MARGIN = 12;
 /** Below the search box. */
 const DOCK_TOP = 56;
-
-const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string) => {
-  const e = document.createElement(tag);
-  if (className) e.className = className;
-  if (text !== undefined) e.textContent = text;
-  return e;
-};
 
 /** A docked window for one card: image, rules text and its tags, each clickable. */
 export class CardPanel {

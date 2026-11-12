@@ -1,11 +1,5 @@
+import { el } from "../viewer/dom.js";
 import type { DeckTag } from "./deckGraph.js";
-
-const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string) => {
-  const e = document.createElement(tag);
-  if (className) e.className = className;
-  if (text !== undefined) e.textContent = text;
-  return e;
-};
 
 /** A searchable checklist of the deck's tags; unchecked tags are hidden from both views. */
 export class TagFilter {

@@ -2,18 +2,12 @@ import type { Card, GraphNode } from "../lib/types.js";
 import type { TagCard } from "./cardIndex.js";
 import { CardPreview } from "./cardPreview.js";
 import { filterCards } from "./search.js";
+import { el } from "./dom.js";
 
 const PAGE_SIZE = 50;
 const MARGIN = 12;
 /** Below the tag search box. */
 const DOCK_TOP = 56;
-
-const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string) => {
-  const e = document.createElement(tag);
-  if (className) e.className = className;
-  if (text !== undefined) e.textContent = text;
-  return e;
-};
 
 /** A small floating window listing a tag's cards, appended 50 at a time as you scroll. */
 export class CardPopup {

@@ -1,3 +1,4 @@
+import { el } from "../viewer/dom.js";
 import type { DeckTag } from "./deckGraph.js";
 import { TagFilter } from "./tagFilter.js";
 
@@ -20,13 +21,6 @@ export interface DeckPanelOptions {
 }
 
 const MAX_MIN_CARDS = 10;
-
-const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string) => {
-  const e = document.createElement(tag);
-  if (className) e.className = className;
-  if (text !== undefined) e.textContent = text;
-  return e;
-};
 
 /** The deck page's side panel: paste a list, see what matched, and pick the view. */
 export class DeckPanel {
