@@ -1,16 +1,8 @@
-import {
-  CO_LINK_COLOR,
-  COLOR_IDENTITY_COLORS,
-  DECK_CARD_LINK_COLOR,
-  HIER_LINK_COLOR,
-  HIER_STRENGTH,
-  HIER_WIDTH,
-  OTHER_COLOR,
-} from "../config.js";
+import { COLOR_IDENTITY_COLORS, DECK_CARD_LINK_COLOR, OTHER_COLOR } from "../config.js";
 import { colorBucket } from "../lib/nodeFields.js";
 import type { Card, Graph, GraphNode } from "../lib/types.js";
-import { buildCardIndex, type TagCard } from "../viewer/cardIndex.js";
-import type { LinkRow, PointRow } from "../viewer/viewData.js";
+import { buildCardIndex, cardTagNodes, type TagCard } from "../viewer/cardIndex.js";
+import { clusterName, linkRows, type LinkRow, type PointRow } from "../viewer/viewData.js";
 
 export interface DeckTag {
   node: GraphNode;
@@ -25,17 +17,11 @@ export interface Rows {
 
 /** Every tag directly on a deck card, most deck cards first, then by label. */
 export function deckTags(graph: Pick<Graph, "nodes" | "edges">, deck: readonly Card[]): DeckTag[] {
-  const pos = new Map(graph.nodes.map((n) => [n.id, n.i]));
-  const present = new Set<number>();
-  for (const card of deck) {
-    for (const t of card.tags) {
-      const i = pos.get(t.id);
-      if (i !== undefined) present.add(i);
-    }
-  }
+  const nodeById = new Map(graph.nodes.map((n) => [n.id, n]));
+  const present = new Set(deck.flatMap((card) => cardTagNodes(card, nodeById)));
   const index = buildCardIndex(graph, deck);
   return [...present]
-    .map((i) => ({ node: graph.nodes[i]!, cards: index.cardsForTag(i) }))
+    .map((node) => ({ node, cards: index.cardsForTag(node.i) }))
     .sort((a, b) => b.cards.length - a.cards.length || a.node.label.localeCompare(b.node.label));
 }
 
@@ -43,37 +29,23 @@ export function deckTags(graph: Pick<Graph, "nodes" | "edges">, deck: readonly C
  * Tag view: the given tags as points, sized by deck card count, with every shipped
  * graph edge between two of them. Point idx is the position in `tags`.
  */
-export function deckTagRows(graph: Pick<Graph, "edges" | "meta">, tags: readonly DeckTag[], colors: readonly string[]): Rows {
-  const names = graph.meta.communities.map((c) => c.name);
-  const local = new Map(tags.map((t, k) => [t.node.i, k]));
+export function deckTagRows(
+  graph: Pick<Graph, "nodes" | "edges" | "meta">,
+  tags: readonly DeckTag[],
+  colors: readonly string[],
+): Rows {
+  const pointOf = new Map(tags.map((t, k) => [t.node.i, k]));
   const points = tags.map(({ node, cards }, k) => ({
     id: node.id,
     idx: k,
     label: node.label,
     card_count: cards.length,
     size: cards.length,
-    cluster: node.community >= 0 ? (names[node.community] ?? null) : null,
+    cluster: clusterName(graph.meta, node),
     color: colors[node.i] ?? OTHER_COLOR,
   }));
-  const links: LinkRow[] = [];
-  graph.edges.forEach((e, i) => {
-    const s = local.get(e.s);
-    const t = local.get(e.t);
-    if (s === undefined || t === undefined) return;
-    const co = e.type === "co";
-    links.push({
-      source: tags[s]!.node.id,
-      target: tags[t]!.node.id,
-      sourceidx: s,
-      targetidx: t,
-      edge: i,
-      kind: e.type,
-      strength: co ? e.npmi : HIER_STRENGTH,
-      width: co ? e.npmi : HIER_WIDTH,
-      color: co ? CO_LINK_COLOR : HIER_LINK_COLOR,
-    });
-  });
-  return { points, links };
+  const edges = graph.edges.flatMap((e, i) => (pointOf.has(e.s) && pointOf.has(e.t) ? [i] : []));
+  return { points, links: linkRows(graph, edges, (node) => pointOf.get(node)!) };
 }
 
 export interface CardLink {
