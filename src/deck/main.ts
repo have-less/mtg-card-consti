@@ -7,22 +7,10 @@ import { CardPopup } from "../viewer/cardPopup.js";
 import { colorNodes } from "../viewer/colors.js";
 import { loadCards, loadGraph } from "../viewer/data.js";
 import { dimensionsFromUrl, setDimensionsInUrl } from "../viewer/dimensions.js";
-import { cardLinks, deckCardRows, deckTagRows, deckTags, type DeckTag, type Rows } from "./deckGraph.js";
+import { cardLinks, deckCardRows, deckTagRows, deckTags, visibleTags, type DeckTag } from "./deckGraph.js";
 import { isLand, matchDeck, parseDeckList, type DeckMatch } from "./deckList.js";
 import { DeckPanel, type DeckView } from "./deckPanel.js";
-
-const STORAGE_KEY = "mtg-tag-graph:deck";
-const HIDDEN_KEY = "mtg-tag-graph:deck-hidden-tags";
-const HIDE_LANDS_KEY = "mtg-tag-graph:deck-hide-lands";
-
-function loadHidden(): Set<string> {
-  try {
-    const ids: unknown = JSON.parse(localStorage.getItem(HIDDEN_KEY) ?? "[]");
-    return new Set(Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : []);
-  } catch {
-    return new Set();
-  }
-}
+import { deckStorage } from "./storage.js";
 
 const status = document.getElementById("status")!;
 const setStatus = (text: string) => (status.textContent = text);
@@ -36,8 +24,8 @@ async function main() {
   let view: DeckView = url.searchParams.get("show") === "cards" ? "cards" : "tags";
   let dimensions = dimensionsFromUrl(url);
   let minCards = DECK_MIN_TAG_CARDS;
-  const hidden = loadHidden();
-  let hideLands = localStorage.getItem(HIDE_LANDS_KEY) === "1";
+  const hidden = deckStorage.hiddenTags();
+  let hideLands = deckStorage.hideLands();
   let cards: Card[] | undefined;
   let names: string[] = [];
   let match: DeckMatch = { cards: [], missing: [] };
@@ -62,16 +50,12 @@ async function main() {
     history.replaceState(null, "", url);
   };
 
-  const rows = (): Rows => {
-    if (view === "cards") return deckCardRows(deck, cardLinks(deck, DECK_CARD_K, hidden));
-    shown = tags.filter((t) => t.cards.length >= minCards && !hidden.has(t.node.id));
-    return deckTagRows(graph, shown, colors);
-  };
-
   const draw = async () => {
     closeAll();
     if (deck.length === 0) return;
-    const { points, links } = rows();
+    shown = view === "tags" ? visibleTags(tags, minCards, hidden) : [];
+    const { points, links } =
+      view === "tags" ? deckTagRows(graph, shown, colors) : deckCardRows(deck, cardLinks(deck, DECK_CARD_K, hidden));
     if (renderer) return renderer.setData(points, links, view === "tags");
     renderer = new GraphRenderer(document.getElementById("graph")!, {
       points,
@@ -116,23 +100,28 @@ async function main() {
 
   const map = (text: string) => {
     if (!cards) return;
-    localStorage.setItem(STORAGE_KEY, text);
+    deckStorage.setText(text);
     names = parseDeckList(text);
     match = matchDeck(names, cards);
     refresh();
   };
 
   const refresh = () => {
-    const lands = match.cards.filter(isLand).length;
     deck = hideLands ? match.cards.filter((c) => !isLand(c)) : match.cards;
     tags = deckTags(graph, deck);
-    panel.showResult(match.cards.length, names.length, lands, tags, match.missing);
+    panel.showResult({
+      listed: names.length,
+      found: match.cards.length,
+      lands: match.cards.filter(isLand).length,
+      tags,
+      missing: match.missing,
+    });
     if (deck.length === 0) setStatus("");
     void draw();
   };
 
   const panel = new DeckPanel(document.body, {
-    text: localStorage.getItem(STORAGE_KEY) ?? "",
+    text: deckStorage.text(),
     view,
     minCards,
     dimensions,
@@ -141,11 +130,11 @@ async function main() {
     onMap: map,
     onHideLands: (on) => {
       hideLands = on;
-      localStorage.setItem(HIDE_LANDS_KEY, on ? "1" : "0");
+      deckStorage.setHideLands(on);
       refresh();
     },
     onHiddenChange: () => {
-      localStorage.setItem(HIDDEN_KEY, JSON.stringify([...hidden]));
+      deckStorage.setHiddenTags(hidden);
       void draw();
     },
     onView: (v) => {
@@ -172,8 +161,8 @@ async function main() {
   cards = await loadCards();
   setStatus("");
   panel.ready();
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved?.trim()) map(saved);
+  const saved = deckStorage.text();
+  if (saved.trim()) map(saved);
 }
 
 main().catch((e: Error) => {

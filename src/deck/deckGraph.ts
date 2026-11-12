@@ -25,6 +25,11 @@ export function deckTags(graph: Pick<Graph, "nodes" | "edges">, deck: readonly C
     .sort((a, b) => b.cards.length - a.cards.length || a.node.label.localeCompare(b.node.label));
 }
 
+/** The tags the tag view draws: on at least `minCards` deck cards and not hidden. */
+export function visibleTags(tags: readonly DeckTag[], minCards: number, hidden: ReadonlySet<string>): DeckTag[] {
+  return tags.filter((t) => t.cards.length >= minCards && !hidden.has(t.node.id));
+}
+
 /**
  * Tag view: the given tags as points, sized by deck card count, with every shipped
  * graph edge between two of them. Point idx is the position in `tags`.

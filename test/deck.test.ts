@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardLinks, deckCardRows, deckTagRows, deckTags } from "../src/deck/deckGraph.js";
+import { cardLinks, deckCardRows, deckTagRows, deckTags, visibleTags } from "../src/deck/deckGraph.js";
 import { isLand, matchDeck, normalizeName, parseDeckList } from "../src/deck/deckList.js";
 import type { Card, Graph, GraphNode } from "../src/lib/types.js";
 
@@ -95,6 +95,11 @@ describe("deck tag view", () => {
 
   it("lists the tags on deck cards, most cards first", () => {
     expect(tags.map((t) => [t.node.id, t.cards.length])).toEqual([["a", 2], ["b", 1], ["c", 1]]);
+  });
+
+  it("draws tags on enough deck cards that aren't hidden", () => {
+    expect(visibleTags(tags, 1, new Set(["b"])).map((t) => t.node.id)).toEqual(["a", "c"]);
+    expect(visibleTags(tags, 2, new Set()).map((t) => t.node.id)).toEqual(["a"]);
   });
 
   it("keeps the graph's edges between shown tags, indexed locally", () => {

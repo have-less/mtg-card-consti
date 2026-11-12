@@ -1,3 +1,4 @@
+import { DECK_MIN_TAG_CARDS_MAX } from "../config.js";
 import { dimensionToggle, type Dimensions } from "../viewer/dimensions.js";
 import { el } from "../viewer/dom.js";
 import type { DeckTag } from "./deckGraph.js";
@@ -21,10 +22,23 @@ export interface DeckPanelOptions {
   onHiddenChange: () => void;
 }
 
-const MAX_MIN_CARDS = 10;
+export interface DeckResult {
+  /** Card names in the pasted list. */
+  listed: number;
+  /** Of those, how many matched a card. */
+  found: number;
+  /** Matched cards that are lands. */
+  lands: number;
+  /** Tags on the drawn cards. */
+  tags: readonly DeckTag[];
+  /** Names that matched no card. */
+  missing: readonly string[];
+}
 
 /** The deck page's side panel: paste a list, see what matched, and pick the view. */
 export class DeckPanel {
+  private view: DeckView;
+  private hasCards = false;
   private readonly input = el("textarea", "deck-input");
   private readonly mapButton = el("button", "deck-button", "Loading cards…");
   private readonly summary = el("div", "deck-summary");
@@ -38,6 +52,7 @@ export class DeckPanel {
   private readonly tagFilter: TagFilter;
 
   constructor(parent: HTMLElement, opts: DeckPanelOptions) {
+    this.view = opts.view;
     this.tagFilter = new TagFilter(opts.hidden, opts.onHiddenChange);
     const landsBox = el("input");
     landsBox.type = "checkbox";
@@ -75,7 +90,7 @@ export class DeckPanel {
     const range = el("input");
     range.type = "range";
     range.min = "1";
-    range.max = String(MAX_MIN_CARDS);
+    range.max = String(DECK_MIN_TAG_CARDS_MAX);
     range.value = String(opts.minCards);
     const showMin = () => (this.minValue.textContent = `Tags on at least ${range.value} deck card${range.value === "1" ? "" : "s"}`);
     showMin();
@@ -85,11 +100,8 @@ export class DeckPanel {
     });
     this.minRow.append(this.minValue, range);
 
-    this.controls.hidden = true;
-    this.minRow.hidden = true;
     this.missing.hidden = true;
-    this.tagFilter.root.hidden = true;
-    this.landsRow.hidden = true;
+    this.updateVisibility();
     root.append(
       header,
       this.input,
@@ -110,29 +122,29 @@ export class DeckPanel {
     this.mapButton.textContent = "Map deck";
   }
 
-  showResult(found: number, total: number, lands: number, tags: readonly DeckTag[], missing: readonly string[]) {
-    this.summary.textContent = total
-      ? `${found} of ${total} cards found · ${tags.length} tags`
-      : "No cards in the list";
+  showResult({ listed, found, lands, tags, missing }: DeckResult) {
+    this.hasCards = found > 0;
+    this.summary.textContent = listed ? `${found} of ${listed} cards found · ${tags.length} tags` : "No cards in the list";
     this.landsLabel.textContent = `Hide lands (${lands})`;
-    this.landsRow.hidden = found === 0;
     this.tagFilter.setTags(tags);
-    this.tagFilter.root.hidden = found === 0;
-    this.missing.replaceChildren(el("summary", undefined, `${missing.length} not found`));
     const list = el("div", "deck-missing-list");
     list.textContent = missing.join("\n");
-    this.missing.append(list);
+    this.missing.replaceChildren(el("summary", undefined, `${missing.length} not found`), list);
     this.missing.hidden = missing.length === 0;
-    this.controls.hidden = found === 0;
-    this.minRow.hidden = found === 0 || !this.viewButtons.tags.classList.contains("active");
+    this.updateVisibility();
   }
 
   setView(view: DeckView) {
+    this.view = view;
     for (const v of ["tags", "cards"] as const) this.viewButtons[v].classList.toggle("active", v === view);
-    if (!this.controls.hidden) this.minRow.hidden = view !== "tags";
+    this.updateVisibility();
   }
 
-  setError(message: string) {
-    this.summary.textContent = message;
+  /** Deck controls appear once cards match; the min-cards slider only applies to the tag view. */
+  private updateVisibility() {
+    this.controls.hidden = !this.hasCards;
+    this.landsRow.hidden = !this.hasCards;
+    this.tagFilter.root.hidden = !this.hasCards;
+    this.minRow.hidden = !this.hasCards || this.view !== "tags";
   }
 }
