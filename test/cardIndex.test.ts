@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Card, Graph, GraphNode } from "../src/lib/types.js";
-import { buildCardIndex } from "../src/viewer/cardIndex.js";
+import { buildCardIndex, cardTagNodes } from "../src/viewer/cardIndex.js";
 
 const node = (i: number, id: string): GraphNode => ({
   i,
@@ -47,5 +47,15 @@ describe("buildCardIndex", () => {
   it("gives a parent every descendant's cards once, at their best weight", () => {
     expect(names(0)).toEqual(["Apple", "Mango", "Zebra"]);
     expect(index.cardsForTag(0)[0]!.weight).toBe(1);
+  });
+});
+
+describe("cardTagNodes", () => {
+  const nodes = [{ ...node(0, "small"), card_count: 5 }, { ...node(1, "big"), card_count: 50 }];
+  const nodeById = new Map(nodes.map((n) => [n.id, n]));
+
+  it("lists a card's tags once each, most cards first, skipping unknown tags", () => {
+    const c = card("X", [["small", 0.5], ["big", 1], ["small", 1], ["gone", 1]]);
+    expect(cardTagNodes(c, nodeById).map((n) => n.id)).toEqual(["big", "small"]);
   });
 });

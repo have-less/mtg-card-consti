@@ -1,6 +1,7 @@
 import { DECK_CARD_K, DECK_MIN_TAG_CARDS } from "../config.js";
 import { GraphRenderer } from "../graph/renderer.js";
 import type { Card, GraphNode } from "../lib/types.js";
+import { cardTagNodes } from "../viewer/cardIndex.js";
 import { CardPanel } from "../viewer/cardPanel.js";
 import { CardPopup } from "../viewer/cardPopup.js";
 import { colorNodes } from "../viewer/colors.js";
@@ -94,10 +95,7 @@ async function main() {
 
   const openCard = (card: Card) => {
     popup.close();
-    const cardTags = [...new Set(card.tags.map((t) => nodeById.get(t.id)).filter((n): n is GraphNode => !!n))].sort(
-      (a, b) => b.card_count - a.card_count,
-    );
-    cardPanel.open(card, cardTags);
+    cardPanel.open(card, cardTagNodes(card, nodeById));
   };
 
   /** From a tag in the card panel: show it in the tag view with its deck cards. */

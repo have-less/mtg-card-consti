@@ -1,7 +1,7 @@
 import { DEFAULT_K, DEFAULT_SCORE } from "../config.js";
 import { GraphRenderer } from "../graph/renderer.js";
 import type { Card, GraphNode } from "../lib/types.js";
-import { buildCardIndex, type CardIndex } from "./cardIndex.js";
+import { buildCardIndex, cardTagNodes, type CardIndex } from "./cardIndex.js";
 import { CardPanel } from "./cardPanel.js";
 import { CardPopup } from "./cardPopup.js";
 import { colorNodes, type ColorMode } from "./colors.js";
@@ -78,9 +78,7 @@ async function main() {
   const cardPanel = new CardPanel(document.body, focusTag, closeAll);
 
   const focusCard = (card: Card) => {
-    const tags = [...new Set(card.tags.map((t) => nodeById.get(t.id)).filter((n): n is GraphNode => !!n))].sort(
-      (a, b) => b.card_count - a.card_count,
-    );
+    const tags = cardTagNodes(card, nodeById);
     popup.close();
     openTag = undefined;
     cardPanel.open(card, tags);

@@ -1,4 +1,14 @@
-import type { Card, Graph } from "../lib/types.js";
+import type { Card, Graph, GraphNode } from "../lib/types.js";
+
+/** A card's tags as graph nodes, each once, most cards first. Tags not in the graph are skipped. */
+export function cardTagNodes(card: Pick<Card, "tags">, nodeById: ReadonlyMap<string, GraphNode>): GraphNode[] {
+  const nodes = new Set<GraphNode>();
+  for (const t of card.tags) {
+    const n = nodeById.get(t.id);
+    if (n) nodes.add(n);
+  }
+  return [...nodes].sort((a, b) => b.card_count - a.card_count);
+}
 
 export interface TagCard {
   card: Card;
