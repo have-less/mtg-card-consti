@@ -1,3 +1,4 @@
+import { fold } from "../lib/text.js";
 import type { Card } from "../lib/types.js";
 
 /** Section headings that exporters (Arena, MTGO, Moxfield, Archidekt) put between cards. */
@@ -6,16 +7,12 @@ const HEADINGS = new Set([
   "sideboard", "maybeboard", "considering", "tokens",
 ]);
 
-/** Lowercase, plain ASCII letters, straight quotes, single spaces, and " // " between faces. */
+/** Folded (lowercase, no accents), with straight quotes, single spaces, and " // " between faces. */
 export function normalizeName(name: string): string {
-  return name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+  return fold(name)
     .replace(/[’‘`]/g, "'")
     .replace(/\s*\/{1,2}\s*/g, " // ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
+    .replace(/\s+/g, " ");
 }
 
 /**

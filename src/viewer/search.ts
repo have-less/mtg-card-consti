@@ -1,7 +1,14 @@
+import { fold } from "../lib/text.js";
 import type { GraphNode } from "../lib/types.js";
 import type { TagCard } from "./cardIndex.js";
 
 const norm = (s: string) => s.toLowerCase().replace(/[-_]+/g, " ").trim();
+
+/** Whether a tag's label or slug contains the query, matched like searchTags. An empty query matches all. */
+export function tagMatches(node: Pick<GraphNode, "label" | "slug">, query: string): boolean {
+  const q = norm(query);
+  return !q || norm(node.label).includes(q) || norm(node.slug).includes(q);
+}
 
 /**
  * Tags whose label or slug contains the query. Prefix matches rank above
@@ -21,9 +28,6 @@ export function searchTags(nodes: readonly GraphNode[], query: string, limit = 1
   const bySize = (a: GraphNode, b: GraphNode) => b.card_count - a.card_count || a.i - b.i;
   return [...prefix.sort(bySize), ...inner.sort(bySize)].slice(0, limit);
 }
-
-/** Lowercase with accents removed, so "altair" finds "Altaïr". */
-const fold = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 /**
  * Cards whose name contains the query, ignoring case and accents. An exact

@@ -1,4 +1,5 @@
 import { el } from "../viewer/dom.js";
+import { tagMatches } from "../viewer/search.js";
 import type { DeckTag } from "./deckGraph.js";
 
 /** A searchable checklist of the deck's tags; unchecked tags are hidden from both views. */
@@ -51,8 +52,7 @@ export class TagFilter {
   }
 
   private matching(): readonly DeckTag[] {
-    const q = this.query.value.trim().toLowerCase();
-    return q ? this.tags.filter((t) => t.node.label.toLowerCase().includes(q)) : this.tags;
+    return this.tags.filter((t) => tagMatches(t.node, this.query.value));
   }
 
   private render() {

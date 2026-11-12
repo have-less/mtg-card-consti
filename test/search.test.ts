@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Card, GraphNode } from "../src/lib/types.js";
 import type { TagCard } from "../src/viewer/cardIndex.js";
-import { filterCards, searchCards, searchTags } from "../src/viewer/search.js";
+import { filterCards, searchCards, searchTags, tagMatches } from "../src/viewer/search.js";
 
 const node = (i: number, label: string, card_count: number, slug = label.replace(/ /g, "-")): GraphNode => ({
   i,
@@ -42,6 +42,21 @@ describe("searchTags", () => {
   it("returns nothing for an empty query and respects the limit", () => {
     expect(labels("  ")).toEqual([]);
     expect(labels("r", 2)).toEqual(["ramp", "removal"]);
+  });
+});
+
+describe("tagMatches", () => {
+  const tag = { label: "cycle-rav-shockland", slug: "cycle-rav-shockland" };
+
+  it("matches label or slug like searchTags, treating dashes as spaces", () => {
+    expect(tagMatches(tag, "CYCLE")).toBe(true);
+    expect(tagMatches(tag, "rav shock")).toBe(true);
+    expect(tagMatches({ label: "mana rock", slug: "manarock" }, "manarock")).toBe(true);
+    expect(tagMatches(tag, "fetch")).toBe(false);
+  });
+
+  it("matches everything for an empty query", () => {
+    expect(tagMatches(tag, "  ")).toBe(true);
   });
 });
 
