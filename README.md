@@ -33,6 +33,14 @@ Tags are nodes, colored by community, linked by each tag's top 5 edges by NPMI p
 hierarchy links (amber). Cosmograph loads DuckDB-Wasm from the jsDelivr CDN, so the
 first load needs internet. All Cosmograph calls live in `src/graph/renderer.ts`.
 
+### Deck page
+
+Open `/deck.html` (or the **Deck →** link) and paste a deck list. Arena, MTGO, Moxfield
+and Archidekt exports work, and each card counts once. **Tags** shows the deck's tags,
+sized by how many deck cards have them and linked by the main graph's edges. **Cards**
+shows the deck's cards, linked to the cards they share the most tags with. The list is
+saved in the browser.
+
 ### Deploy
 
 `npm run build` copies `data/out/graph.json` and `cards.json` into `dist/` and fails if

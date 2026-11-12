@@ -112,6 +112,13 @@ export class GraphRenderer {
     this.cosmograph.start(1);
   }
 
+  /** Replace the drawn points and links, re-running the layout. */
+  async setData(points: PointRow[], links: LinkRow[], showClusterLabels: boolean) {
+    this.config = { ...this.config, points, links, showClusterLabels };
+    this.clearSelection();
+    await this.cosmograph.setConfig(this.config);
+  }
+
   /** Select a point with its neighbors and zoom to it. */
   focusPoint(index: number) {
     this.cosmograph.selectPoint(index, false, true);

@@ -305,12 +305,10 @@ body {
   font-size: 11px;
 }
 
-.view-toggle {
-  position: fixed;
-  z-index: 11;
-  top: 12px;
-  right: 12px;
-  min-width: 44px;
+.view-toggle,
+.nav-link,
+.deck-button,
+.deck-segmented button {
   padding: 7px 12px;
   background: #2a2c33;
   border: 1px solid #3a3c44;
@@ -318,11 +316,240 @@ body {
   color: #f0f0f0;
   font: inherit;
   font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
 }
 
-.view-toggle:hover {
+.view-toggle:hover,
+.nav-link:hover,
+.deck-button:hover:not(:disabled),
+.deck-segmented button:hover {
   border-color: #5da5da;
+}
+
+.view-toggle,
+.nav-link {
+  position: fixed;
+  z-index: 11;
+  top: 12px;
+}
+
+.view-toggle {
+  right: 12px;
+}
+
+.nav-link {
+  right: 68px;
+}
+
+.view-toggle,
+.deck-dim {
+  min-width: 44px;
+}
+
+.deck-panel {
+  position: fixed;
+  z-index: 11;
+  top: 12px;
+  right: 12px;
+  box-sizing: border-box;
+  width: 320px;
+  max-height: calc(100vh - 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  overflow-y: auto;
+  background: rgba(30, 31, 36, 0.97);
+  border: 1px solid #3a3c44;
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+}
+
+.deck-panel [hidden] {
+  display: none;
+}
+
+.deck-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.deck-header .card-popup-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.deck-nav {
+  color: #5da5da;
+  text-decoration: none;
+}
+
+.deck-nav:hover {
+  text-decoration: underline;
+}
+
+.deck-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 180px;
+  resize: vertical;
+  padding: 7px 10px;
+  background: #2a2c33;
+  border: 1px solid #3a3c44;
+  border-radius: 6px;
+  color: #f0f0f0;
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+  outline: none;
+}
+
+.deck-input:focus {
+  border-color: #5da5da;
+}
+
+.deck-button:disabled {
+  color: #7d828a;
+  cursor: default;
+}
+
+.deck-summary {
+  color: #cfd2d6;
+}
+
+.deck-summary:empty {
+  display: none;
+}
+
+.deck-missing summary {
+  color: #f0a35e;
+  cursor: pointer;
+}
+
+.deck-missing-list {
+  margin-top: 4px;
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-line;
+  color: #9aa0a6;
+  font-size: 12px;
+}
+
+.deck-controls {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.deck-segmented {
+  display: flex;
+}
+
+.deck-segmented button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.deck-segmented button:last-child {
+  border-left: 0;
+  border-radius: 0 6px 6px 0;
+}
+
+.deck-segmented button.active {
+  background: #3a5f80;
+  border-color: #5da5da;
+}
+
+.deck-min {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #9aa0a6;
+  font-size: 12px;
+}
+
+.deck-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #cfd2d6;
+  cursor: pointer;
+}
+
+.deck-check input {
+  margin: 0;
+  accent-color: #5da5da;
+}
+
+.tag-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  padding-top: 8px;
+  border-top: 1px solid #3a3c44;
+}
+
+.tag-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  color: #9aa0a6;
+  font-size: 12px;
+}
+
+.tag-filter-action {
+  margin-left: 8px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: #5da5da;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tag-filter-action:hover {
+  text-decoration: underline;
+}
+
+.tag-filter .tag-filter-query {
+  margin: 0;
+}
+
+.tag-filter-list {
+  max-height: 240px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.tag-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 2px;
+  cursor: pointer;
+}
+
+.tag-filter-row:hover {
+  background: #2c2e35;
+}
+
+.tag-filter-row input {
+  margin: 0;
+  accent-color: #5da5da;
+}
+
+.tag-filter-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-filter-row:has(input:not(:checked)) .tag-filter-label {
+  color: #7d828a;
+  text-decoration: line-through;
 }
 
 #status {

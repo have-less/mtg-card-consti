@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { dominantColor, rootParents } from "../src/lib/nodeFields.js";
+import { colorBucket, dominantColor, rootParents } from "../src/lib/nodeFields.js";
+
+describe("colorBucket", () => {
+  it("keeps one color, calls two or more M, and none C", () => {
+    expect(["W", "G", "UB", "WUBRG", "C", ""].map(colorBucket)).toEqual(["W", "G", "M", "M", "C", "C"]);
+  });
+});
 
 describe("rootParents", () => {
   it("points a root at itself with depth 0", () => {

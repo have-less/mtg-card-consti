@@ -1,6 +1,6 @@
 import { CO_LINK_COLOR, HIER_LINK_COLOR, HIER_STRENGTH, HIER_WIDTH } from "../config.js";
 import { buildAdjacency, SCORE_KEYS, topKEdges, type ScoreKey } from "../lib/edgeRank.js";
-import type { Graph } from "../lib/types.js";
+import type { Graph, GraphMeta, GraphNode } from "../lib/types.js";
 
 /** One row per node, in node index order. */
 export interface PointRow extends Record<string, unknown> {
@@ -19,7 +19,7 @@ export interface LinkRow extends Record<string, unknown> {
   target: string;
   sourceidx: number;
   targetidx: number;
-  /** Index into graph.edges. */
+  /** Index into graph.edges (into the card links in the deck's card view). */
   edge: number;
   kind: "co" | "h";
   strength: number;
@@ -27,20 +27,32 @@ export interface LinkRow extends Record<string, unknown> {
   color: string;
 }
 
+/** A node's community name, or null when unclustered. */
+export function clusterName(meta: Pick<GraphMeta, "communities">, node: Pick<GraphNode, "community">): string | null {
+  return node.community >= 0 ? (meta.communities[node.community]?.name ?? null) : null;
+}
+
 export function pointRows(graph: Pick<Graph, "nodes" | "meta">, colors: readonly string[]): PointRow[] {
-  const names = graph.meta.communities.map((c) => c.name);
   return graph.nodes.map((n) => ({
     id: n.id,
     idx: n.i,
     label: n.label,
     card_count: n.card_count,
     size: Math.sqrt(n.card_count),
-    cluster: n.community >= 0 ? (names[n.community] ?? null) : null,
+    cluster: clusterName(graph.meta, n),
     color: colors[n.i]!,
   }));
 }
 
-export function linkRows(graph: Pick<Graph, "nodes" | "edges">, edgeIndexes: Iterable<number>): LinkRow[] {
+/**
+ * One row per edge. `pointIndex` maps a node index to its point index when
+ * only some nodes are drawn; by default they're the same.
+ */
+export function linkRows(
+  graph: Pick<Graph, "nodes" | "edges">,
+  edgeIndexes: Iterable<number>,
+  pointIndex: (node: number) => number = (i) => i,
+): LinkRow[] {
   const rows: LinkRow[] = [];
   for (const i of edgeIndexes) {
     const e = graph.edges[i]!;
@@ -48,8 +60,8 @@ export function linkRows(graph: Pick<Graph, "nodes" | "edges">, edgeIndexes: Ite
     rows.push({
       source: graph.nodes[e.s]!.id,
       target: graph.nodes[e.t]!.id,
-      sourceidx: e.s,
-      targetidx: e.t,
+      sourceidx: pointIndex(e.s),
+      targetidx: pointIndex(e.t),
       edge: i,
       kind: e.type,
       strength: co ? e.npmi : HIER_STRENGTH,

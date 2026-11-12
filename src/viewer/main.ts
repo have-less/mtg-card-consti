@@ -1,29 +1,20 @@
 import { DEFAULT_K, DEFAULT_SCORE } from "../config.js";
 import { GraphRenderer } from "../graph/renderer.js";
-import type { Card, Graph, GraphNode } from "../lib/types.js";
-import { buildCardIndex, type CardIndex } from "./cardIndex.js";
+import type { Card, GraphNode } from "../lib/types.js";
+import { buildCardIndex, cardTagNodes, type CardIndex } from "./cardIndex.js";
 import { CardPanel } from "./cardPanel.js";
 import { CardPopup } from "./cardPopup.js";
 import { colorNodes, type ColorMode } from "./colors.js";
+import { loadCards, loadGraph } from "./data.js";
+import { dimensionsFromUrl, dimensionToggle, setDimensionsInUrl } from "./dimensions.js";
 import { SearchBox } from "./searchBox.js";
 import { adjacencyByScore, linkRows, pointRows, visibleEdges, type Filter } from "./viewData.js";
-
-const GRAPH_URL = "/data/out/graph.json";
-const CARDS_URL = "/data/out/cards.json";
 
 const status = document.getElementById("status")!;
 const setStatus = (text: string) => (status.textContent = text);
 
-async function loadCards(): Promise<Card[]> {
-  const res = await fetch(CARDS_URL);
-  if (!res.ok) throw new Error(`Could not load ${CARDS_URL} (${res.status})`);
-  return ((await res.json()) as { cards: Card[] }).cards;
-}
-
 async function main() {
-  const res = await fetch(GRAPH_URL);
-  if (!res.ok) throw new Error(`Could not load ${GRAPH_URL} (${res.status}). Run npm run prep first.`);
-  const graph = (await res.json()) as Graph;
+  const graph = await loadGraph();
   const nodeById = new Map(graph.nodes.map((n) => [n.id, n]));
 
   const adjacency = adjacencyByScore(graph);
@@ -47,7 +38,7 @@ async function main() {
   const popup = new CardPopup(document.body, closeAll);
 
   const url = new URL(window.location.href);
-  let dimensions: 2 | 3 = url.searchParams.get("view") === "3d" ? 3 : 2;
+  const dimensions = dimensionsFromUrl(url);
 
   const { colors } = colorNodes(graph, colorMode);
   let cardsRequested = false;
@@ -88,9 +79,7 @@ async function main() {
   const cardPanel = new CardPanel(document.body, focusTag, closeAll);
 
   const focusCard = (card: Card) => {
-    const tags = [...new Set(card.tags.map((t) => nodeById.get(t.id)).filter((n): n is GraphNode => !!n))].sort(
-      (a, b) => b.card_count - a.card_count,
-    );
+    const tags = cardTagNodes(card, nodeById);
     popup.close();
     openTag = undefined;
     cardPanel.open(card, tags);
@@ -99,22 +88,13 @@ async function main() {
 
   const search = new SearchBox(document.body, graph.nodes, () => cards, { onTag: focusTag, onCard: focusCard });
 
-  const viewToggle = document.createElement("button");
-  viewToggle.className = "view-toggle";
-  const labelToggle = () => {
-    viewToggle.textContent = dimensions === 3 ? "2D" : "3D";
-    viewToggle.title = dimensions === 3 ? "Switch to the flat view" : "Switch to 3D (drag to rotate, scroll to zoom, Shift-drag to pan)";
-  };
-  labelToggle();
-  viewToggle.addEventListener("click", () => {
-    dimensions = dimensions === 3 ? 2 : 3;
-    labelToggle();
-    if (dimensions === 3) url.searchParams.set("view", "3d");
-    else url.searchParams.delete("view");
-    history.replaceState(null, "", url);
-    void renderer.setDimensions(dimensions);
-  });
-  document.body.append(viewToggle);
+  document.body.append(
+    dimensionToggle("view-toggle", dimensions, (d) => {
+      setDimensionsInUrl(url, d);
+      history.replaceState(null, "", url);
+      void renderer.setDimensions(d);
+    }),
+  );
 
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && (popup.isOpen || cardPanel.isOpen)) closeAll();

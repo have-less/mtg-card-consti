@@ -1,14 +1,8 @@
 import type { Card } from "../lib/types.js";
+import { el } from "./dom.js";
 
 const GAP = 8;
 const MARGIN = 12;
-
-const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string) => {
-  const e = document.createElement(tag);
-  if (className) e.className = className;
-  if (text !== undefined) e.textContent = text;
-  return e;
-};
 
 /** A hover card: large image plus name, cost, type, rules text and set, shown beside a list. */
 export class CardPreview {

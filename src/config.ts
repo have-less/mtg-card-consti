@@ -67,6 +67,16 @@ export const COLOR_IDENTITY_COLORS: Readonly<Record<string, string>> = {
   C: "#9AA0A6",
 };
 
+// Deck page
+
+/** Tags on fewer deck cards than this are hidden in the deck's tag view (adjustable in the page). */
+export const DECK_MIN_TAG_CARDS = 2;
+/** Upper end of that slider. */
+export const DECK_MIN_TAG_CARDS_MAX = 10;
+/** In the deck's card view, each card keeps its links to the k cards it shares the most tags with. */
+export const DECK_CARD_K = 5;
+export const DECK_CARD_LINK_COLOR = "rgba(160, 166, 178, 0.35)";
+
 /**
  * Force simulation. Unset values use the library defaults; the debug panel
  * edits these and can copy the chosen values back here.

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { COLOR_IDENTITY_COLORS, HIER_STRENGTH, OTHER_COLOR, PALETTE_12 } from "../src/config.js";
 import type { Graph, GraphNode } from "../src/lib/types.js";
 import { colorNodes } from "../src/viewer/colors.js";
-import { adjacencyByScore, linkRows, pointRows, visibleEdges } from "../src/viewer/viewData.js";
+import { adjacencyByScore, clusterName, linkRows, pointRows, visibleEdges } from "../src/viewer/viewData.js";
 
 const node = (i: number, extra: Partial<GraphNode> = {}): GraphNode => ({
   i,
@@ -74,6 +74,20 @@ describe("pointRows and linkRows", () => {
     const [co, h] = linkRows(graph, [0, 3]);
     expect(co).toMatchObject({ source: "t1", target: "t2", sourceidx: 1, targetidx: 2, edge: 0, kind: "co", strength: 0.6, width: 0.6 });
     expect(h).toMatchObject({ source: "t0", target: "t1", edge: 3, kind: "h", strength: HIER_STRENGTH });
+  });
+
+  it("maps node indexes to point indexes when only some nodes are drawn", () => {
+    const pointOf = new Map([[1, 0], [2, 1]]);
+    const [link] = linkRows(graph, [0], (n) => pointOf.get(n)!);
+    expect(link).toMatchObject({ source: "t1", target: "t2", sourceidx: 0, targetidx: 1, edge: 0 });
+  });
+});
+
+describe("clusterName", () => {
+  it("names a node's community, or null when unclustered or unknown", () => {
+    expect(clusterName(graph.meta, { community: 1 })).toBe("small");
+    expect(clusterName(graph.meta, { community: -1 })).toBeNull();
+    expect(clusterName(graph.meta, { community: 9 })).toBeNull();
   });
 });
 
