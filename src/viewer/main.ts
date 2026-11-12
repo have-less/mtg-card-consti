@@ -1,29 +1,19 @@
 import { DEFAULT_K, DEFAULT_SCORE } from "../config.js";
 import { GraphRenderer } from "../graph/renderer.js";
-import type { Card, Graph, GraphNode } from "../lib/types.js";
+import type { Card, GraphNode } from "../lib/types.js";
 import { buildCardIndex, type CardIndex } from "./cardIndex.js";
 import { CardPanel } from "./cardPanel.js";
 import { CardPopup } from "./cardPopup.js";
 import { colorNodes, type ColorMode } from "./colors.js";
+import { loadCards, loadGraph } from "./data.js";
 import { SearchBox } from "./searchBox.js";
 import { adjacencyByScore, linkRows, pointRows, visibleEdges, type Filter } from "./viewData.js";
-
-const GRAPH_URL = "/data/out/graph.json";
-const CARDS_URL = "/data/out/cards.json";
 
 const status = document.getElementById("status")!;
 const setStatus = (text: string) => (status.textContent = text);
 
-async function loadCards(): Promise<Card[]> {
-  const res = await fetch(CARDS_URL);
-  if (!res.ok) throw new Error(`Could not load ${CARDS_URL} (${res.status})`);
-  return ((await res.json()) as { cards: Card[] }).cards;
-}
-
 async function main() {
-  const res = await fetch(GRAPH_URL);
-  if (!res.ok) throw new Error(`Could not load ${GRAPH_URL} (${res.status}). Run npm run prep first.`);
-  const graph = (await res.json()) as Graph;
+  const graph = await loadGraph();
   const nodeById = new Map(graph.nodes.map((n) => [n.id, n]));
 
   const adjacency = adjacencyByScore(graph);
