@@ -325,6 +325,165 @@ body {
   border-color: #5da5da;
 }
 
+.nav-link {
+  position: fixed;
+  z-index: 11;
+  top: 12px;
+  right: 68px;
+  padding: 7px 12px;
+  background: #2a2c33;
+  border: 1px solid #3a3c44;
+  border-radius: 6px;
+  color: #f0f0f0;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  border-color: #5da5da;
+}
+
+.deck-panel {
+  position: fixed;
+  z-index: 11;
+  top: 12px;
+  right: 12px;
+  box-sizing: border-box;
+  width: 320px;
+  max-height: calc(100vh - 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  overflow-y: auto;
+  background: rgba(30, 31, 36, 0.97);
+  border: 1px solid #3a3c44;
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+}
+
+.deck-panel [hidden] {
+  display: none;
+}
+
+.deck-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.deck-header .card-popup-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.deck-nav {
+  color: #5da5da;
+  text-decoration: none;
+}
+
+.deck-nav:hover {
+  text-decoration: underline;
+}
+
+.deck-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 180px;
+  resize: vertical;
+  padding: 7px 10px;
+  background: #2a2c33;
+  border: 1px solid #3a3c44;
+  border-radius: 6px;
+  color: #f0f0f0;
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+  outline: none;
+}
+
+.deck-input:focus {
+  border-color: #5da5da;
+}
+
+.deck-button,
+.deck-segmented button {
+  padding: 7px 12px;
+  background: #2a2c33;
+  border: 1px solid #3a3c44;
+  border-radius: 6px;
+  color: #f0f0f0;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.deck-button:hover:not(:disabled),
+.deck-segmented button:hover {
+  border-color: #5da5da;
+}
+
+.deck-button:disabled {
+  color: #7d828a;
+  cursor: default;
+}
+
+.deck-summary {
+  color: #cfd2d6;
+}
+
+.deck-summary:empty {
+  display: none;
+}
+
+.deck-missing summary {
+  color: #f0a35e;
+  cursor: pointer;
+}
+
+.deck-missing-list {
+  margin-top: 4px;
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-line;
+  color: #9aa0a6;
+  font-size: 12px;
+}
+
+.deck-controls {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.deck-segmented {
+  display: flex;
+}
+
+.deck-segmented button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.deck-segmented button:last-child {
+  border-left: 0;
+  border-radius: 0 6px 6px 0;
+}
+
+.deck-segmented button.active {
+  background: #3a5f80;
+  border-color: #5da5da;
+}
+
+.deck-dim {
+  min-width: 44px;
+}
+
+.deck-min {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #9aa0a6;
+  font-size: 12px;
+}
+
 #status {
   position: absolute;
   left: 12px;

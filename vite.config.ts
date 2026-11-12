@@ -26,4 +26,9 @@ function copyData(): Plugin {
 
 export default defineConfig({
   plugins: [copyData()],
+  build: {
+    rollupOptions: {
+      input: { main: "index.html", deck: "deck.html" },
+    },
+  },
 });
