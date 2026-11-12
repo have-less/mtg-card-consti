@@ -305,12 +305,10 @@ body {
   font-size: 11px;
 }
 
-.view-toggle {
-  position: fixed;
-  z-index: 11;
-  top: 12px;
-  right: 12px;
-  min-width: 44px;
+.view-toggle,
+.nav-link,
+.deck-button,
+.deck-segmented button {
   padding: 7px 12px;
   background: #2a2c33;
   border: 1px solid #3a3c44;
@@ -318,29 +316,35 @@ body {
   color: #f0f0f0;
   font: inherit;
   font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
 }
 
-.view-toggle:hover {
+.view-toggle:hover,
+.nav-link:hover,
+.deck-button:hover:not(:disabled),
+.deck-segmented button:hover {
   border-color: #5da5da;
 }
 
+.view-toggle,
 .nav-link {
   position: fixed;
   z-index: 11;
   top: 12px;
-  right: 68px;
-  padding: 7px 12px;
-  background: #2a2c33;
-  border: 1px solid #3a3c44;
-  border-radius: 6px;
-  color: #f0f0f0;
-  font-weight: 600;
-  text-decoration: none;
 }
 
-.nav-link:hover {
-  border-color: #5da5da;
+.view-toggle {
+  right: 12px;
+}
+
+.nav-link {
+  right: 68px;
+}
+
+.view-toggle,
+.deck-dim {
+  min-width: 44px;
 }
 
 .deck-panel {
@@ -404,23 +408,6 @@ body {
   border-color: #5da5da;
 }
 
-.deck-button,
-.deck-segmented button {
-  padding: 7px 12px;
-  background: #2a2c33;
-  border: 1px solid #3a3c44;
-  border-radius: 6px;
-  color: #f0f0f0;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.deck-button:hover:not(:disabled),
-.deck-segmented button:hover {
-  border-color: #5da5da;
-}
-
 .deck-button:disabled {
   color: #7d828a;
   cursor: default;
@@ -470,10 +457,6 @@ body {
 .deck-segmented button.active {
   background: #3a5f80;
   border-color: #5da5da;
-}
-
-.deck-dim {
-  min-width: 44px;
 }
 
 .deck-min {
