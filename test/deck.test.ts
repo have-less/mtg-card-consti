@@ -17,7 +17,7 @@ const node = (i: number, id: string, community = -1): GraphNode => ({
   degree_shipped: 0,
 });
 
-const card = (name: string, tags: string[], ci = ""): Card =>
+const card = (name: string, tags: string[], ci = "C"): Card =>
   ({
     oracle_id: `id-${name}`,
     name,

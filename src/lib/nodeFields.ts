@@ -46,16 +46,20 @@ export function rootParents(
 
 const COLOR_ORDER: readonly DominantColor[] = ["W", "U", "B", "R", "G", "M", "C"];
 
+/** A color identity key ("C", "W", "UB", ...) as one bucket: that color, M for two or more, C for none. */
+export function colorBucket(key: string): DominantColor {
+  if (key === "C" || key === "") return "C";
+  return key.length === 1 ? (key as DominantColor) : "M";
+}
+
 /**
- * The most common bucket over a tag's cards, given each card's color identity
- * key ("C", "W", "UB", ...): one color counts as that color, two or more as M,
- * none as C. A tie for most common is M, since cycles often hold one card of
- * each color. An empty set is C.
+ * The most common colorBucket over a tag's cards. A tie for most common is M,
+ * since cycles often hold one card of each color. An empty set is C.
  */
 export function dominantColor(colorKeys: Iterable<string>): DominantColor {
   const counts = new Map<DominantColor, number>();
   for (const key of colorKeys) {
-    const bucket: DominantColor = key === "C" ? "C" : key.length === 1 ? (key as DominantColor) : "M";
+    const bucket = colorBucket(key);
     counts.set(bucket, (counts.get(bucket) ?? 0) + 1);
   }
   let best: DominantColor = "C";

@@ -7,6 +7,7 @@ import {
   HIER_WIDTH,
   OTHER_COLOR,
 } from "../config.js";
+import { colorBucket } from "../lib/nodeFields.js";
 import type { Card, Graph, GraphNode } from "../lib/types.js";
 import { buildCardIndex, type TagCard } from "../viewer/cardIndex.js";
 import type { LinkRow, PointRow } from "../viewer/viewData.js";
@@ -105,9 +106,6 @@ export function cardLinks(deck: readonly Card[], k: number, ignore: ReadonlySet<
   return all.filter((l) => keep.has(l));
 }
 
-const identityColor = (key: string) =>
-  COLOR_IDENTITY_COLORS[key.length > 1 ? "M" : key || "C"] ?? OTHER_COLOR;
-
 /** Card view: deck cards as points, sized by how many links they kept, colored by color identity. */
 export function deckCardRows(deck: readonly Card[], links: readonly CardLink[]): Rows {
   const degree = deck.map(() => 0);
@@ -124,7 +122,7 @@ export function deckCardRows(deck: readonly Card[], links: readonly CardLink[]):
       card_count: degree[i]!,
       size: 1 + degree[i]!,
       cluster: null,
-      color: identityColor(c.color_identity_key),
+      color: COLOR_IDENTITY_COLORS[colorBucket(c.color_identity_key)] ?? OTHER_COLOR,
     })),
     links: links.map((l, i) => ({
       source: deck[l.a]!.oracle_id,
